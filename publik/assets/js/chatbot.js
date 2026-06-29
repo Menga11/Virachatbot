@@ -87,13 +87,12 @@ function showTyping(){
 /* ================= SEND MESSAGE ================= */
 async function sendMessage(){
 
-  const input =
-  document.getElementById("user-input");
+  const input = document.getElementById("user-input");
 
-  const rawMessage =
-  input.value.trim();
+  // GANTI rawMessage JADI userMessage DI SINI COK!
+  const userMessage = input.value.trim();
 
-  if(!rawMessage) return;
+  if(!userMessage) return;
 
   // ================= RESPON SANTAI =================
 const santai = {
