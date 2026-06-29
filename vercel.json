@@ -2,18 +2,18 @@
   "version": 2,
   "builds": [
     {
-      "src": "app.js",
+      "src": "server.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/assets/(.*)",
-      "dest": "/assets/$1"
+      "dest": "/publik/assets/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "app.js"
+      "dest": "server.js"
     }
   ]
 }
