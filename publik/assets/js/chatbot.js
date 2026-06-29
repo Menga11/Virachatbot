@@ -88,95 +88,76 @@ function showTyping(){
 async function sendMessage(){
 
   const input = document.getElementById("user-input");
+  const rawMessage = input.value.trim();
 
-  // GANTI rawMessage JADI userMessage DI SINI COK!
-  const userMessage = input.value.trim();
-
-  if(!userMessage) return;
+  if(!rawMessage) return;
 
   // ================= RESPON SANTAI =================
-const santai = {
-  "oke": "Baik 👌 Ada lagi yang ingin ditanyakan?",
-  "ok": "Siap 👍",
-  "makasih": "Sama-sama 😊",
-  "terimakasih": "Sama-sama 😊",
-  "terima kasih": "Sama-sama 😊",
-  "baik": "Baik 👍",
-  "sip": "Siap 👌",
-  "siap": "Oke 😊",
-};
+  const santai = {
+    "oke": "Baik 👌 Ada lagi yang ingin ditanyakan?",
+    "ok": "Siap 👍",
+    "makasih": "Sama-sama 😊",
+    "terimakasih": "Sama-sama 😊",
+    "terima kasih": "Sama-sama 😊",
+    "baik": "Baik 👍",
+    "sip": "Siap 👌",
+    "siap": "Oke 😊",
+  };
 
-const lowerMessage = rawMessage.toLowerCase();
+  const lowerMessage = rawMessage.toLowerCase();
 
-if(santai[lowerMessage]){
-
-  createMessage(rawMessage, "user");
-
-  input.value = "";
-
-  setTimeout(() => {
-
-    createMessage(
-      santai[lowerMessage],
-      "bot"
-    );
-
-  }, 500);
-
-  return;
-}
+  if(santai[lowerMessage]){
+    createMessage(rawMessage, "user");
+    input.value = "";
+    setTimeout(() => {
+      createMessage(
+        santai[lowerMessage],
+        "bot"
+      );
+    }, 500);
+    return;
+  }
 
   // ================= PESAN USER =================
-  createMessage(
-    rawMessage,
-    "user"
-  );
-
+  createMessage(rawMessage, "user");
   input.value = "";
 
   // ================= TYPING =================
-  const typing =
-  showTyping();
+  const typing = showTyping();
 
-  try{
-
+  try {
     // ================= FETCH API =================
     const response = await fetch('https://virachatbot.vercel.app/chat', {
-    method: 'POST',
-    headers: {
+      method: 'POST',
+      headers: {
         'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ message: userMessage })
-});
+      },
+      body: JSON.stringify({ message: rawMessage })
+    });
 
-    const data =
-    await response.json();
+    const data = await response.json();
 
     // HAPUS TYPING
-    typing.remove();
+    if (typing) typing.remove();
 
     // ================= BALASAN BOT =================
-    createMessage(
-      data.reply,
-      "bot"
-    );
+    createMessage(data.reply, "bot");
 
-  }
-
-  catch(error){
-
+  } catch(error) {
     console.log(error);
 
-    typing.remove();
+    // HAPUS TYPING JIKA EROR JARINGAN
+    if (typeof typing !== 'undefined' && typing) {
+      typing.remove();
+    }
 
     createMessage(
       "Server chatbot sedang bermasalah.",
       "bot"
     );
-
   }
-
 }
+
 
 /* ================= QUICK REPLY ================= */
 function quickReply(text){
