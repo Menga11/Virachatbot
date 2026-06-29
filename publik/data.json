@@ -1,0 +1,434 @@
+[
+  {
+    "keyword": ["halo", "hai", "hi", "selamat pagi", "assalamualaikum"],
+    "jawaban": "Halo, ada yang bisa saya bantu terkait informasi Keterbukaan Informasi Publik?"
+  },
+  {
+    "keyword": ["pangkat tertinggi", "pangkat polisi", "urutan pangkat"],
+    "jawaban": "Pangkat tertinggi di Kepolisian adalah Jenderal Polisi."
+  },
+  {
+    "keyword": ["kapolda", "kepala polda", "pimpinan polda"],
+    "jawaban": "Kapolda adalah pimpinan tertinggi di tingkat Polda."
+  },
+  {
+    "keyword": ["cara membuat sim", "syarat sim baru", "pembuatan sim baru","sim"],
+    "jawaban": "Pembuatan SIM baru memerlukan KTP, mengikuti tes kesehatan, psikologi, ujian teori, dan ujian praktik.",
+    "link": "https://korlantas.polri.go.id"
+  },
+  {
+    "keyword": ["perpanjang sim", "cara perpanjang sim"],
+    "jawaban": "Perpanjangan SIM dapat dilakukan di Satpas atau SIM Keliling dengan membawa KTP, SIM lama, surat kesehatan, dan hasil tes psikologi.",
+    "link": "https://korlantas.polri.go.id"
+  },
+  {
+    "keyword": ["masa berlaku sim", "sim berlaku berapa lama"],
+    "jawaban": "SIM memiliki masa berlaku selama 5 tahun sejak tanggal penerbitan."
+  },
+  {
+    "keyword": ["apa itu skck", "fungsi skck"],
+    "jawaban": "SKCK adalah Surat Keterangan Catatan Kepolisian yang digunakan sebagai syarat administrasi untuk pekerjaan, pendidikan, dan keperluan lainnya."
+  },
+  {
+    "keyword": ["cara membuat skck online", "skck online"],
+    "jawaban": "Pembuatan SKCK dapat dilakukan secara online melalui aplikasi atau website resmi Polri dengan melengkapi data dan dokumen persyaratan.",
+    "link": "https://skck.polri.go.id"
+  },
+  {
+    "keyword": ["nomor darurat polisi", "call center polisi", "hotline polisi"],
+    "jawaban": "Masyarakat dapat menghubungi layanan darurat Kepolisian melalui nomor 110 yang aktif selama 24 jam.",
+    "link": "https://polri.go.id"
+  },
+  {
+    "keyword": ["apa itu presisi", "program presisi polri"],
+    "jawaban": "PRESISI adalah program Polri yang berarti Prediktif, Responsibilitas, dan Transparansi Berkeadilan dalam pelayanan kepada masyarakat.",
+    "link": "https://polri.go.id"
+  },
+  {
+    "keyword": ["jam", "pelayanan"],
+    "jawaban": "Jam pelayanan: Senin - Jumat, 08.00 - 16.00 WIB."
+  },
+  {
+    "keyword": ["alamat","alamat polda","lokasi polda","maps polda","google maps polda"],
+    "jawaban": "Alamat Polda Sumut berada di Jl. Sisingamangaraja No.60, Medan. Anda dapat melihat lokasi melalui Google Maps berikut.",
+    "link"   : "https://maps.app.goo.gl/douZogtjcybzttWq6"
+  },
+   {
+    "keyword": ["apa itu humas", "pengertian humas"],
+    "jawaban": "Humas adalah bagian yang bertugas membangun komunikasi dan hubungan baik antara instansi dengan masyarakat."
+  },
+  {
+    "keyword": ["cara melapor ke polisi", "lapor polisi"],
+    "jawaban": "Masyarakat dapat melapor ke kantor polisi terdekat dengan membawa identitas diri dan bukti pendukung terkait kejadian yang dilaporkan."
+  },
+  {
+    "keyword": ["apa itu laporan polisi", "pengertian lp"],
+    "jawaban": "Laporan Polisi adalah dokumen resmi yang dibuat oleh petugas kepolisian atas laporan suatu kejadian atau tindak pidana."
+  },
+  {
+    "keyword": ["apa itu samsat", "fungsi samsat"],
+    "jawaban": "Samsat adalah sistem administrasi terpadu untuk pengurusan pajak kendaraan bermotor, STNK, dan TNKB."
+  },
+  {
+    "keyword": ["cara bayar pajak kendaraan", "bayar pajak motor"],
+    "jawaban": "Pembayaran pajak kendaraan dapat dilakukan di kantor Samsat, Samsat Keliling, atau aplikasi digital resmi pemerintah daerah."
+  },
+  {
+    "keyword": ["apa itu stnk", "fungsi stnk"],
+    "jawaban": "STNK adalah Surat Tanda Nomor Kendaraan sebagai bukti registrasi dan identifikasi kendaraan bermotor."
+  },
+  {
+    "keyword": ["apa itu tilang elektronik", "etle", "electronic traffic law enforcement"],
+    "jawaban": "ETLE adalah sistem penindakan pelanggaran lalu lintas berbasis kamera elektronik secara otomatis.",
+    "link": "https://etle-pmj.id"
+  },
+  {
+    "keyword": ["pengaduan"],
+    "jawaban": "Pengaduan dapat dilakukan melalui website resmi atau datang langsung ke kantor."
+  },
+  {
+   "keyword": ["uu kip","apa itu keterbukaan informasi publik","keterbukaan informasi publik"],
+    "jawaban": "UU KIP adalah Undang-Undang Nomor 14 Tahun 2008 tentang Keterbukaan Informasi Publik yang mengatur hak masyarakat untuk memperoleh informasi dari badan publik.",
+    "link": "https://komisiinformasi.go.id/pdf/20250131103700-Kajian_UU_KIP.pdf"
+  },
+  {
+    "keyword": ["uu kip tujuan", "tujuan keterbukaan informasi publik"],
+    "jawaban": "UU KIP bertujuan menjamin hak masyarakat untuk memperoleh informasi, meningkatkan transparansi, dan mewujudkan pemerintahan yang akuntabel.",
+    "link": "https://komisiinformasi.go.id/pdf/20250131103700-Kajian_UU_KIP.pdf"
+  },
+   {
+    "keyword": ["kenapa keterbukaan informasi penting"],
+    "jawaban": "Keterbukaan informasi penting agar masyarakat dapat mengawasi kinerja pemerintah dan mencegah penyalahgunaan wewenang."
+  },
+  {
+    "keyword": ["hak masyarakat dalam uu kip"],
+    "jawaban": "Masyarakat berhak meminta, memperoleh, melihat, dan menyebarluaskan informasi publik sesuai aturan yang berlaku."
+  },
+  {
+    "keyword": ["siapa yang wajib memberi informasi"],
+    "jawaban": "Badan publik seperti instansi pemerintah wajib menyediakan dan memberikan informasi kepada masyarakat."
+  },
+  {
+    "keyword": ["apa itu badan publik"],
+    "jawaban": "Badan publik adalah lembaga yang menggunakan dana negara atau dana masyarakat dan memiliki kewajiban memberikan informasi publik."
+  },
+  {
+    "keyword": ["contoh badan publik"],
+    "jawaban": "Contoh badan publik adalah kementerian, kepolisian, pemerintah daerah, sekolah negeri, dan lembaga negara lainnya."
+  },
+  {
+    "keyword": ["apa itu informasi publik"],
+    "jawaban": "Informasi publik adalah informasi yang dihasilkan, disimpan, atau dikelola oleh badan publik untuk kepentingan masyarakat."
+  },
+  {
+    "keyword": ["contoh informasi publik"],
+    "jawaban": "Contoh informasi publik adalah laporan kegiatan, anggaran, pelayanan publik, dan kebijakan pemerintah."
+  },
+  {
+    "keyword": ["apa manfaat uu kip"],
+    "jawaban": "UU KIP membantu masyarakat mendapatkan informasi secara terbuka sehingga tercipta pemerintahan yang lebih jujur dan transparan."
+  },
+  {
+    "keyword": ["fungsi uu kip"],
+    "jawaban": "UU KIP berfungsi melindungi hak masyarakat dalam memperoleh informasi dari badan publik."
+  },
+  {
+    "keyword": ["cara meminta informasi publik"],
+    "jawaban": "Permintaan informasi publik dapat dilakukan dengan mengajukan permohonan kepada badan publik atau PPID."
+  },
+  {
+    "keyword": ["apa itu ppid"],
+    "jawaban": "PPID adalah Pejabat Pengelola Informasi dan Dokumentasi yang bertugas melayani permintaan informasi publik."
+  },
+  {
+    "keyword": ["fungsi ppid"],
+    "jawaban": "PPID bertugas menyimpan, mengelola, mendokumentasikan, dan memberikan informasi publik kepada masyarakat."
+  },
+  {
+    "keyword": ["berapa lama jawaban informasi publik"],
+    "jawaban": "Permintaan informasi publik wajib dijawab paling lambat 10 hari kerja dan dapat diperpanjang 7 hari kerja."
+  },
+  {
+    "keyword": ["apakah meminta informasi bayar"],
+    "jawaban": "Permintaan informasi publik umumnya gratis, masyarakat hanya membayar biaya penggandaan dokumen jika diperlukan."
+  },
+  {
+    "keyword": ["informasi yang wajib diumumkan"],
+    "jawaban": "Badan publik wajib mengumumkan informasi penting secara berkala, serta-merta, dan setiap saat."
+  },
+  {
+    "keyword": ["apa itu informasi berkala"],
+    "jawaban": "Informasi berkala adalah informasi yang diumumkan rutin oleh badan publik dalam jangka waktu tertentu."
+  },
+  {
+    "keyword": ["apa itu informasi serta merta"],
+    "jawaban": "Informasi serta-merta adalah informasi yang harus diumumkan segera karena berkaitan dengan keselamatan masyarakat."
+  },
+  {
+    "keyword": ["apa itu informasi setiap saat"],
+    "jawaban": "Informasi setiap saat adalah informasi yang selalu tersedia dan dapat diminta kapan saja oleh masyarakat."
+  },
+  {
+    "keyword": ["apakah semua informasi bisa dibuka"],
+    "jawaban": "Tidak semua informasi dapat dibuka karena ada informasi yang dikecualikan demi keamanan dan kepentingan negara."
+  },
+  {
+    "keyword": ["apa itu informasi dikecualikan"],
+    "jawaban": "Informasi dikecualikan adalah informasi yang tidak dapat diberikan kepada publik karena dapat membahayakan negara atau privasi seseorang."
+  },
+  {
+    "keyword": ["contoh informasi dikecualikan"],
+    "jawaban": "Contoh informasi dikecualikan adalah rahasia negara, data pribadi, dan informasi yang dapat mengganggu proses hukum."
+  },
+  {
+    "keyword": ["data pribadi dalam uu kip"],
+    "jawaban": "Data pribadi masyarakat dilindungi dan tidak boleh diberikan tanpa izin sesuai ketentuan hukum."
+  },
+  {
+    "keyword": ["rahasia negara"],
+    "jawaban": "Rahasia negara adalah informasi yang berkaitan dengan pertahanan, keamanan, dan kedaulatan negara."
+  },
+  {
+    "keyword": ["apa akibat jika badan publik menolak informasi"],
+    "jawaban": "Badan publik dapat dikenakan sanksi jika sengaja tidak memberikan informasi publik yang wajib diberikan."
+  },
+  {
+    "keyword": ["apa akibat menyalahgunakan informasi publik"],
+    "jawaban": "Penyalahgunaan informasi publik secara melawan hukum dapat dikenakan pidana dan denda."
+  },
+   {
+    "keyword": ["apa itu mediasi sengketa informasi"],
+    "jawaban": "Mediasi sengketa informasi adalah proses penyelesaian sengketa informasi publik melalui musyawarah dengan bantuan Komisi Informasi.",
+    "link": "https://komisiinformasi.go.id"
+  },
+  {
+    "keyword": ["siapa yang menyelesaikan sengketa informasi"],
+    "jawaban": "Sengketa informasi diselesaikan oleh Komisi Informasi melalui mediasi atau ajudikasi."
+  },
+    {
+    "keyword": ["apa itu ajudikasi", "ajudikasi non litigasi"],
+    "jawaban": "Ajudikasi nonlitigasi adalah proses penyelesaian sengketa informasi oleh Komisi Informasi di luar pengadilan.",
+    "link": "https://komisiinformasi.go.id"
+  },
+  {
+    "keyword": ["apa itu komisi informasi"],
+    "jawaban": "Komisi Informasi adalah lembaga yang bertugas menyelesaikan sengketa informasi publik."
+  },
+  {
+    "keyword": ["apa itu transparansi"],
+    "jawaban": "Transparansi adalah keterbukaan pemerintah dalam memberikan informasi kepada masyarakat."
+  },
+  {
+    "keyword": ["apa itu akuntabilitas"],
+    "jawaban": "Akuntabilitas adalah tanggung jawab badan publik terhadap kebijakan dan pelayanan kepada masyarakat."
+  },
+  {
+    "keyword": ["hubungan uu kip dengan demokrasi"],
+    "jawaban": "UU KIP mendukung demokrasi karena masyarakat dapat mengetahui dan mengawasi kebijakan pemerintah."
+  },
+  {
+    "keyword": ["uu kip mencegah korupsi"],
+    "jawaban": "Keterbukaan informasi membantu mencegah korupsi, kolusi, dan nepotisme melalui pengawasan masyarakat."
+  },
+  {
+    "keyword": ["hak mendapatkan salinan informasi"],
+    "jawaban": "Masyarakat berhak memperoleh salinan dokumen informasi publik sesuai prosedur yang berlaku."
+  },
+  {
+    "keyword": ["cara keberatan informasi publik"],
+    "jawaban": "Jika permintaan informasi ditolak, masyarakat dapat mengajukan keberatan kepada atasan PPID."
+  },
+  {
+    "keyword": ["hak masyarakat mengawasi pemerintah"],
+    "jawaban": "Masyarakat memiliki hak mengawasi pemerintah melalui akses terhadap informasi publik."
+  },
+  {
+    "keyword": ["apa itu keterbukaan informasi publik"],
+    "jawaban": "Keterbukaan informasi publik adalah jaminan hak masyarakat untuk memperoleh informasi dari badan publik secara terbuka."
+  },
+  {
+    "keyword": ["tujuan transparansi pemerintah"],
+    "jawaban": "Transparansi pemerintah bertujuan meningkatkan kepercayaan masyarakat terhadap pelayanan publik."
+  },
+  {
+    "keyword": ["mengapa informasi publik harus mudah diakses"],
+    "jawaban": "Informasi publik harus mudah diakses agar masyarakat dapat memahami dan menggunakan informasi tersebut dengan baik."
+  },
+   {
+    "keyword": ["siapa bisa meminta informasi publik"],
+    "jawaban": "Setiap warga negara Indonesia berhak meminta informasi publik kepada badan publik sesuai ketentuan UU KIP."
+  },
+  {
+    "keyword": ["apa itu informasi rahasia", "informasi yang tidak boleh dibuka"],
+    "jawaban": "Informasi rahasia adalah informasi yang dikecualikan untuk melindungi keamanan negara, proses hukum, dan privasi seseorang."
+  },
+  {
+    "keyword": ["berapa lama sengketa informasi selesai"],
+    "jawaban": "Penyelesaian sengketa informasi melalui Komisi Informasi paling lambat diselesaikan dalam waktu 100 hari kerja.",
+    "link": "https://komisiinformasi.go.id"
+  },
+  {
+    "keyword": ["apa sanksi penyalahgunaan informasi publik"],
+    "jawaban": "Penyalahgunaan informasi publik secara melawan hukum dapat dikenakan pidana penjara dan denda sesuai UU KIP.",
+    "link": "https://jdih.kominfo.go.id"
+  },
+  {
+    "keyword": ["apa itu informasi berkala", "informasi wajib berkala"],
+    "jawaban": "Informasi berkala adalah informasi yang wajib diumumkan rutin oleh badan publik dalam jangka waktu tertentu."
+  },
+  {
+    "keyword": ["apa itu informasi serta merta"],
+    "jawaban": "Informasi serta-merta adalah informasi yang wajib diumumkan segera apabila menyangkut keselamatan masyarakat."
+  },
+  {
+    "keyword": ["apa arti akuntabilitas"],
+    "jawaban": "Akuntabilitas adalah bentuk pertanggungjawaban badan publik atas kebijakan dan pelayanan kepada masyarakat."
+  },
+  
+  {
+    "keyword": [
+      "bidhumas",
+      "apa itu bidhumas",
+      "fungsi bidhumas",
+      "bidang humas polda",
+      "humas polda"
+    ],
+    "jawaban": "Bidhumas adalah Bidang Hubungan Masyarakat pada Kepolisian Daerah (Polda) yang bertugas mengelola informasi, publikasi, dokumentasi, pelayanan informasi publik, hubungan masyarakat, dan multimedia kepolisian kepada masyarakat.",
+    "link": "https://pusiknas.polri.go.id/web_pusiknas/uploads/produk_hukum/file_berkas/PERPOL%20NO%2014%20TH%202018%20TTG%20REVISI%20PERKAP%20NO%2022%20TH%202010%20TTG%20SOTK%20POLDA_gab.pdf"
+  },
+  {
+    "keyword": [
+      "siapa kepala humas",
+      "kabidhumas",
+      "apa itu kabidhumas"
+    ],
+    "jawaban": "Kabidhumas adalah Kepala Bidang Hubungan Masyarakat yang memimpin pelaksanaan tugas kehumasan di lingkungan Polda.",
+    "link": "https://pusiknas.polri.go.id/web_pusiknas/uploads/produk_hukum/file_berkas/PERPOL%20NO%2014%20TH%202018%20TTG%20REVISI%20PERKAP%20NO%2022%20TH%202010%20TTG%20SOTK%20POLDA_gab.pdf"
+  },
+  {
+    "keyword": [
+      "struktur bidhumas",
+      "susunan bidhumas",
+      "ada berapa subbagian humas",
+      "subbagian humas"
+    ],
+    "jawaban": "Struktur Bidhumas terdiri dari Subbagrenmin, Subbid Penmas, Subbid PID, dan Subbid Multimedia (Mulmed).",
+    "link": "https://pusiknas.polri.go.id/web_pusiknas/uploads/produk_hukum/file_berkas/PERPOL%20NO%2014%20TH%202018%20TTG%20REVISI%20PERKAP%20NO%2022%20TH%202010%20TTG%20SOTK%20POLDA_gab.pdf"
+  },
+  {
+    "keyword": [
+      "apa itu penmas",
+      "subbid penmas",
+      "fungsi penmas",
+      "penerangan masyarakat"
+    ],
+    "jawaban": "Subbid Penmas adalah Subbidang Penerangan Masyarakat yang bertugas memberikan informasi, penerangan, dan menjalin hubungan kemitraan dengan masyarakat maupun media.",
+    "link": "https://pusiknas.polri.go.id/web_pusiknas/uploads/produk_hukum/file_berkas/PERPOL%20NO%2014%20TH%202018%20TTG%20REVISI%20PERKAP%20NO%2022%20TH%202010%20TTG%20SOTK%20POLDA_gab.pdf"
+  },
+  {
+    "keyword": [
+      "urpenum",
+      "apa itu urpenum",
+      "penerangan umum"
+    ],
+    "jawaban": "Urpenum adalah Urusan Penerangan Umum pada Subbid Penmas yang bertugas menyampaikan informasi umum kepolisian kepada masyarakat.",
+    "link": "https://pusiknas.polri.go.id/web_pusiknas/uploads/produk_hukum/file_berkas/PERPOL%20NO%2014%20TH%202018%20TTG%20REVISI%20PERKAP%20NO%2022%20TH%202010%20TTG%20SOTK%20POLDA_gab.pdf"
+  },
+  {
+    "keyword": [
+      "urpensat",
+      "apa itu urpensat",
+      "penerangan satuan"
+    ],
+    "jawaban": "Urpensat adalah Urusan Penerangan Satuan yang bertugas memberikan informasi terkait kegiatan dan tugas satuan di lingkungan kepolisian.",
+    "link": "https://pusiknas.polri.go.id/web_pusiknas/uploads/produk_hukum/file_berkas/PERPOL%20NO%2014%20TH%202018%20TTG%20REVISI%20PERKAP%20NO%2022%20TH%202010%20TTG%20SOTK%20POLDA_gab.pdf"
+  },
+  {
+    "keyword": [
+      "urmitra",
+      "apa itu urmitra",
+      "kemitraan humas"
+    ],
+    "jawaban": "Urmitra adalah Urusan Kemitraan yang bertugas membangun hubungan kerja sama dan komunikasi antara kepolisian dengan masyarakat maupun media.",
+    "link": "https://pusiknas.polri.go.id/web_pusiknas/uploads/produk_hukum/file_berkas/PERPOL%20NO%2014%20TH%202018%20TTG%20REVISI%20PERKAP%20NO%2022%20TH%202010%20TTG%20SOTK%20POLDA_gab.pdf"
+  },
+  {
+    "keyword": [
+      "apa itu pid",
+      "subbid pid",
+      "fungsi pid",
+      "pengelolaan informasi dan dokumentasi"
+    ],
+    "jawaban": "Subbid PID adalah Subbidang Pengelolaan Informasi dan Dokumentasi yang bertugas mengelola informasi publik, dokumentasi kegiatan, peliputan, dan evaluasi informasi.",
+    "link": "https://pusiknas.polri.go.id/web_pusiknas/uploads/produk_hukum/file_berkas/PERPOL%20NO%2014%20TH%202018%20TTG%20REVISI%20PERKAP%20NO%2022%20TH%202010%20TTG%20SOTK%20POLDA_gab.pdf"
+  },
+  {
+    "keyword": [
+      "urpullahinfodok",
+      "apa itu urpullahinfodok"
+    ],
+    "jawaban": "Urpullahinfodok adalah Urusan Pengumpulan dan Pengolahan Informasi dan Dokumentasi yang bertugas mengumpulkan serta mengolah informasi dan dokumentasi kepolisian.",
+    "link": "https://pusiknas.polri.go.id/web_pusiknas/uploads/produk_hukum/file_berkas/PERPOL%20NO%2014%20TH%202018%20TTG%20REVISI%20PERKAP%20NO%2022%20TH%202010%20TTG%20SOTK%20POLDA_gab.pdf"
+  },
+  {
+    "keyword": [
+      "urlipprodok",
+      "apa itu urlipprodok"
+    ],
+    "jawaban": "Urlipprodok adalah Urusan Peliputan, Produksi, dan Dokumentasi yang bertugas melakukan peliputan kegiatan serta produksi dan dokumentasi informasi kepolisian.",
+    "link": "https://pusiknas.polri.go.id/web_pusiknas/uploads/produk_hukum/file_berkas/PERPOL%20NO%2014%20TH%202018%20TTG%20REVISI%20PERKAP%20NO%2022%20TH%202010%20TTG%20SOTK%20POLDA_gab.pdf"
+  },
+  {
+    "keyword": [
+      "uranev",
+      "apa itu uranev",
+      "analisis dan evaluasi humas"
+    ],
+    "jawaban": "Uranev adalah Urusan Analisis dan Evaluasi yang bertugas melakukan analisis dan evaluasi terhadap informasi serta kegiatan dokumentasi kepolisian.",
+    "link": "https://pusiknas.polri.go.id/web_pusiknas/uploads/produk_hukum/file_berkas/PERPOL%20NO%2014%20TH%202018%20TTG%20REVISI%20PERKAP%20NO%2022%20TH%202010%20TTG%20SOTK%20POLDA_gab.pdf"
+  },
+  {
+    "keyword": [
+      "apa itu mulmed",
+      "subbid multimedia",
+      "fungsi multimedia",
+      "mulmed humas"
+    ],
+    "jawaban": "Subbid Multimedia (Mulmed) bertugas membuat konten kreatif digital, melakukan pemantauan media, analisa informasi digital, dan penyebaran informasi melalui media digital.",
+    "link": "https://pusiknas.polri.go.id/web_pusiknas/uploads/produk_hukum/file_berkas/PERPOL%20NO%2014%20TH%202018%20TTG%20REVISI%20PERKAP%20NO%2022%20TH%202010%20TTG%20SOTK%20POLDA_gab.pdf"
+  },
+  {
+    "keyword": [
+      "urprodukkreatif",
+      "apa itu urprodukkreatif"
+    ],
+    "jawaban": "Urprodukkreatif adalah Urusan Produksi Kreatif yang bertugas membuat desain, video, grafis, dan konten kreatif digital untuk publikasi kepolisian.",
+    "link": "https://pusiknas.polri.go.id/web_pusiknas/uploads/produk_hukum/file_berkas/PERPOL%20NO%2014%20TH%202018%20TTG%20REVISI%20PERKAP%20NO%2022%20TH%202010%20TTG%20SOTK%20POLDA_gab.pdf"
+  },
+  {
+    "keyword": [
+      "urpemanalis",
+      "apa itu urpemanalis"
+    ],
+    "jawaban": "Urpemanalis adalah Urusan Pemantauan dan Analisa yang bertugas memantau media serta menganalisa informasi dan opini publik terkait kepolisian.",
+    "link": "https://pusiknas.polri.go.id/web_pusiknas/uploads/produk_hukum/file_berkas/PERPOL%20NO%2014%20TH%202018%20TTG%20REVISI%20PERKAP%20NO%2022%20TH%202010%20TTG%20SOTK%20POLDA_gab.pdf"
+  },
+  {
+    "keyword": [
+      "urdisindig",
+      "apa itu urdisindig",
+      "diseminasi info digital"
+    ],
+    "jawaban": "Urdisindig adalah Urusan Diseminasi Informasi Digital yang bertugas menyebarluaskan informasi kepolisian melalui platform digital dan media sosial.",
+    "link": "https://pusiknas.polri.go.id/web_pusiknas/uploads/produk_hukum/file_berkas/PERPOL%20NO%2014%20TH%202018%20TTG%20REVISI%20PERKAP%20NO%2022%20TH%202010%20TTG%20SOTK%20POLDA_gab.pdf"
+  },
+  {
+    "keyword": [
+      "apa itu subbagrenmin",
+      "fungsi renmin",
+      "renmin humas"
+    ],
+    "jawaban": "Subbagrenmin adalah Subbagian Perencanaan dan Administrasi yang bertugas mengelola perencanaan, administrasi, tata usaha, dan keuangan di lingkungan Bidhumas.",
+    "link": "https://pusiknas.polri.go.id/web_pusiknas/uploads/produk_hukum/file_berkas/PERPOL%20NO%2014%20TH%202018%20TTG%20REVISI%20PERKAP%20NO%2022%20TH%202010%20TTG%20SOTK%20POLDA_gab.pdf"
+  }
+]
