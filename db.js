@@ -13,25 +13,24 @@ async function connectDB() {
 
     console.log("Database connected successfully!");
 
-    // 🔥 TRIK SAKTI: Otomatis bikin tabel chatbot_memory kalau belum ada di Aiven
-    const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS chatbot_memory (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        pertanyaan TEXT NOT EXISTS,
-        jawaban TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `;
-    
-    // Eksekusi pembuatan tabel langsung saat koneksi berhasil dibangun
-    await connection.query(createTableQuery);
-    console.log("✅ Tabel 'chatbot_memory' siap digunakan di cloud!");
+    // 🔥 Buat tabel secara otomatis di Aiven Cloud jika belum ada
+    if (process.env.DB_HOST) {
+      const createTableQuery = `
+        CREATE TABLE IF NOT EXISTS chatbot_memory (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          pertanyaan TEXT,
+          jawaban TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `;
+      await connection.query(createTableQuery);
+      console.log("✅ Tabel 'chatbot_memory' otomatis terbuat di cloud!");
+    }
 
     return connection;
   } catch (error) {
     console.error("Database connection failed:", error.message);
-    
-    // Buat objek database cadangan agar Vercel tidak error 500 saat DB down
+    // Return mock object biar gak crash null.query()
     return {
       query: async () => [[]],
       execute: async () => [[]],
