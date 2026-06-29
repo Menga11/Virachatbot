@@ -142,26 +142,13 @@ if(santai[lowerMessage]){
   try{
 
     // ================= FETCH API =================
-    const response =
-    await fetch(
-      "http://localhost:3000/chat",
-      {
-
-        method: "POST",
-
-        headers:{
-          "Content-Type":
-          "application/json"
-        },
-
-        body: JSON.stringify({
-
-          message: rawMessage
-
-        })
-
-      }
-    );
+    const response = await fetch('https://virachatbot.vercel.app/chat', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ message: userMessage })
+});
 
     const data =
     await response.json();
