@@ -337,7 +337,11 @@ userMessage.includes("sabu") ||
 
 userMessage.includes("ganja") ||
 
-userMessage.includes("curanmor")
+userMessage.includes("curanmor") ||
+
+userMessage.includes("pelecehan") ||
+
+userMessage.includes("seksual") 
 
 ){
 
@@ -395,6 +399,10 @@ else if(userMessage.includes("ganja")){
 
 keyword="ganja";
 
+}
+
+else if(userMessage.includes("pelecehan") || userMessage.includes("seksual")){ // 🆕 Tambahkan blok ini
+  keyword="pelecehan";
 }
 
 
