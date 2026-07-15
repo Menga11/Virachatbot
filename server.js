@@ -71,8 +71,8 @@ async function askGemini(body) {
 function preprocess(text) {
   return String(text || "")
     .toLowerCase()
-    .replace(/[^a-zA-Z0-9\s]/g, "") // Pastikan ada \s di sini agar spasi TIDAK dihapus
-    .replace(/\s+/g, " ")           // Menyatukan spasi ganda menjadi satu
+    .replace(/[^a-zA-Z0-9\s]/g, "")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
@@ -195,7 +195,7 @@ function formatNewsResults(results) {
 }
 
 /* =====================================================
-   INTENT MATCHING
+   INTENT MATCHING (MENDUKUNG DETIK, HUMAS POLRI, & TBNEWS)
 ===================================================== */
 function isNewsIntent(userMessage) {
   const newsKeywords = [
@@ -212,12 +212,18 @@ function getNewsKeyword(userMessage) {
     .replace(/\b(berita|kasus|tentang|hari ini|di|polda|sumut)\b/g, "")
     .replace(/\s+/g, " ")
     .trim();
-  return cleanKeyword ? `${cleanKeyword} polda sumut` : "kriminal polda sumut";
+
+  if (!cleanKeyword) {
+    cleanKeyword = "kriminal";
+  }
+
+  // Menambahkan operator pencarian spesifik untuk target portal berita
+  return `${cleanKeyword} polda sumut (site:tribratanews.sumut.polri.go.id OR site:detik.com OR site:humas.polri.go.id)`;
 }
 
 /* =====================================================
    CHATBOT MAIN ENDPOINT
-===================================================== */
+==================================================== */
 app.post("/chat", async (req, res) => {
   try {
     if (!req.body || typeof req.body.message !== "string" || !req.body.message.trim()) {
@@ -243,13 +249,13 @@ app.post("/chat", async (req, res) => {
         return res.json({ reply: formatted });
       }
       
-      // JIKA GOOGLE API KOSONG/LIMIT -> Langsung minta bantuan Gemini AI mencari berita terbaru
+      // JIKA GOOGLE API KOSONG/LIMIT -> Alihkan pencarian berita langsung ke Gemini AI
       console.log("Pencarian Google kosong/limit, mengalihkan pencarian berita langsung ke Gemini AI...");
       
       const bodyBerita = {
         systemInstruction: {
           parts: [{
-            text: `Kamu adalah VIRA, Chatbot resmi Humas Polda Sumut. User menanyakan berita kriminal terbaru yang tidak terindeks di sistem lokal. Gunakan basis pengetahuan umum real-time kamu untuk menjabarkan rincian atau info umum terkait kasus/topik "${originalMessage}" di wilayah Sumatera Utara secara profesional, singkat, dan berikan edukasi atau imbauan kamtibmas di akhir jawaban.`
+            text: `Kamu adalah VIRA, Chatbot resmi Humas Polda Sumut. User menanyakan berita kriminal terbaru yang tidak terindeks di sistem lokal. Gunakan basis pengetahuan umum real-time kamu untuk menjabarkan rincian atau info umum terkait kasus/topik "${originalMessage}" di wilayah Sumatera Utara secara profesional dan singkat. Di akhir jawaban, WAJIB sertakan pesan imbauan serta teks berikut untuk mengarahkan user jika ingin info lebih lanjut: "\n\nUntuk pembaruan berita selengkapnya, silakan kunjungi portal resmi kami di: 🔗 https://tribratanews.sumut.polri.go.id/ atau portal berita terpercaya seperti detik.com."`
           }]
         },
         contents: [{ role: "user", parts: [{ text: originalMessage }] }]
