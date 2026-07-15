@@ -153,41 +153,45 @@ app.post("/chat", async (req, res) => {
   const userMessage = inputPesan.trim().toLowerCase();
 
   try {
-    // TAMBAHKAN BARIS INI: Memastikan tabel dibuat & diisi jika Aiven masih kosong
-    if (typeof importDataJSON === "function") {
-      await importDataJSON(); 
-    }
-
     // 1. CEK INTENT BERITA TERLEBIH DAHULU
-    if (isNewsIntent(userMessage)) {
+    if (typeof isNewsIntent === "function" && isNewsIntent(userMessage)) {
       console.log(`[News] Mendeteksi pencarian berita: "${userMessage}"`);
-      const beritaTerbaru = await dapatkanBeritaGemini(userMessage);
-      
-      if (beritaTerbaru) {
-        return res.json({ jawaban: beritaTerbaru });
+      try {
+        const beritaTerbaru = await dapatkanBeritaGemini(userMessage);
+        if (beritaTerbaru) {
+          return res.json({ jawaban: beritaTerbaru });
+        }
+      } catch (newsErr) {
+        console.error("Gagal mendapatkan berita dari Gemini:", newsErr);
       }
     }
 
-    // 2. CEK DATABASE LOCAL (data.json seeder)
-    const queryDb = "SELECT jawaban, link FROM chatbot_memory WHERE pertanyaan LIKE ?";
-    const [rows] = await db.execute(queryDb, [`%${userMessage}%`]);
+    // 2. CEK DATABASE (Aiven MySQL) - Dibungkus try-catch agar jika tabel belum ada, server TIDAK crash
+    try {
+      if (db) {
+        const queryDb = "SELECT jawaban, link FROM chatbot_memory WHERE pertanyaan LIKE ?";
+        const [rows] = await db.execute(queryDb, [`%${userMessage}%`]);
 
-    if (rows.length > 0) {
-      const dataMatch = rows[0];
-      let responsFinal = dataMatch.jawaban;
-      if (dataMatch.link) {
-        responsFinal += `\n\nUntuk informasi lebih lanjut, kunjungi: ${dataMatch.link}`;
+        if (rows && rows.length > 0) {
+          const dataMatch = rows[0];
+          let responsFinal = dataMatch.jawaban;
+          if (dataMatch.link) {
+            responsFinal += `\n\nUntuk informasi lebih lanjut, kunjungi: ${dataMatch.link}`;
+          }
+          return res.json({ jawaban: responsFinal });
+        }
       }
-      return res.json({ jawaban: responsFinal });
+    } catch (dbError) {
+      // Jika tabel chatbot_memory belum dibuat di Aiven, error ditangkap di sini tanpa mematikan aplikasi
+      console.error("Database error (Mungkin tabel belum terbuat/seeder belum jalan):", dbError.message);
     }
 
-    // 3. FALLBACK KE GEMINI STANDAR (JIKA TIDAK ADA DI DB & BUKAN BERITA)
+    // 3. FALLBACK KE GEMINI STANDAR (Jika tidak ada di DB / koneksi DB gagal)
     console.log(`[Fallback] Menghubungi Gemini untuk: "${userMessage}"`);
     const jawabanAI = await tanyaGemini(userMessage);
     return res.json({ jawaban: jawabanAI });
 
   } catch (error) {
-    // Ubah bagian ini agar kita bisa melihat error-nya di Vercel Logs
     console.error("ERROR PADA UTAMA CHAT:", error); 
     res.status(500).json({ error: "Server chatbot sedang bermasalah." });
   }
