@@ -197,9 +197,10 @@ async function searchGoogleNews(keyword, site = "") {
     const apiKey = process.env.GOOGLE_API_KEY;
     const cx = process.env.GOOGLE_CX;
 
-    let query = keyword;
+    let query = `"Polda Sumut" ${keyword}`;
+
     if (site) {
-      query = `site:${site} ${keyword}`;
+      query = `site:${site} ${keyword} "Polda Sumut" OR "Polda Sumatera Utara"`;
     }
 
     const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}&num=3`;
@@ -210,11 +211,26 @@ async function searchGoogleNews(keyword, site = "") {
     }
 
     const data = await response.json();
+
     if (!data.items) {
       return [];
     }
 
-    return data.items.map(item => ({
+    const hasil = data.items.filter(item => {
+      const text = (item.title + " " + (item.snippet || "")).toLowerCase();
+
+      return (
+    text.includes("polda sumut") ||
+    text.includes("polda sumatera utara") ||
+    text.includes("sumatera utara") ||
+    text.includes("ditres") ||
+    text.includes("bid humas") ||
+    text.includes("polrestabes medan") ||
+    text.includes("polres")
+);
+    });
+
+    return hasil.map(item => ({
       title: item.title,
       link: item.link,
       source: item.displayLink
@@ -231,14 +247,30 @@ async function searchGoogleNews(keyword, site = "") {
 ===================================================== */
 async function searchAllNews(keyword) {
 
-    const berita = await searchGoogleNews(
-        keyword,
-        "tribratanews.sumut.polri.go.id"
-    );
+  const sites = [
+    "tribratanews.sumut.polri.go.id",
+    "tbnews.polda.sumut.polri.go.id",
+    "humas.polri.go.id",
+    "detik.com",
+    "kompas.com",
+    "antaranews.com"
+];
 
-    return berita;
+  for (const site of sites) {
+
+    console.log("Mencari di:", site);
+
+    const berita = await searchGoogleNews(keyword, site);
+
+    if (berita.length > 0) {
+      console.log("Ditemukan di:", site);
+      return berita;
+    }
+
+  }
+
+  return [];
 }
-
  
 
 /* =====================================================
@@ -255,10 +287,17 @@ function isNewsIntent(userMessage) {
 }
 
 function getNewsKeyword(userMessage) {
-  return userMessage
-    .replace(/\b(berita|kasus|hari ini|tentang|di|polisi|polda|sumut)\b/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+
+    let keyword = userMessage
+        .replace(/\b(berita|kasus|hari ini|tentang|yang|di|oleh|dilakukan|lakukan|polisi|polda|sumut)\b/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (!keyword) {
+        keyword = "kriminal";
+    }
+
+    return keyword;
 }
 
 function formatNewsResults(results) {
@@ -311,14 +350,15 @@ app.post("/chat", async (req, res) => {
       }
 
       // Jika tidak ditemukan di TBNews, Detik, maupun Humas Polri
-        return res.json({
-    reply: `Maaf, berita mengenai "${keyword}" belum ditemukan di Website Resmi Tribrata News Polda Sumatera Utara.
+        reply: `Maaf, berita mengenai "${keyword}" belum ditemukan pada sumber berita yang digunakan.
 
-Silakan kunjungi:
-https://tribratanews.sumut.polri.go.id`
-});
-    
-      }
+          Sumber pencarian:
+          • Tribrata News Sumut
+          • Humas Polri
+          • Detik
+          • Kompas
+          • Antara`
+          };
 
     /* ================= DATABASE SEARCH ================= */
     const [allRows] = await db.execute("SELECT * FROM chatbot_memory");
