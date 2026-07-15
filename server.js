@@ -44,6 +44,7 @@ async function askGemini(body) {
       );
 
       const data = await response.json();
+      console.log("TOTAL GOOGLE ITEM:", data.items?.length || 0);
 
       if (response.ok) {
         console.log(`Menggunakan API ${API_KEYS.indexOf(apiKey) + 1}`);
@@ -197,16 +198,22 @@ async function searchGoogleNews(keyword, site = "") {
     const apiKey = process.env.GOOGLE_API_KEY;
     const cx = process.env.GOOGLE_CX;
 
-    let query = `"Polda Sumut" ${keyword}`;
+    let query = `("Polda Sumut" OR "Polda Sumatera Utara" OR "Polisi Sumut") ${keyword}`;
 
     if (site) {
-      query = `site:${site} ${keyword} "Polda Sumut" OR "Polda Sumatera Utara"`;
+      query = `site:${site} (${keyword}) ("Polda Sumut" OR "Polda Sumatera Utara" OR "Sumatera Utara")`;
     }
 
-    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}&num=3`;
+
+    console.log("KEYWORD CARI:", keyword);
+    console.log("QUERY:", query);
+
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}&num=5`;
+
     const response = await fetch(url);
 
     if (!response.ok) {
+      console.log("Google Search Error:", response.status);
       return [];
     }
 
@@ -216,19 +223,10 @@ async function searchGoogleNews(keyword, site = "") {
       return [];
     }
 
-    const hasil = data.items.filter(item => {
-      const text = (item.title + " " + (item.snippet || "")).toLowerCase();
 
-      return (
-    text.includes("polda sumut") ||
-    text.includes("polda sumatera utara") ||
-    text.includes("sumatera utara") ||
-    text.includes("ditres") ||
-    text.includes("bid humas") ||
-    text.includes("polrestabes medan") ||
-    text.includes("polres")
-);
-    });
+    // Jangan filter terlalu ketat
+    const hasil = data.items;
+
 
     return hasil.map(item => ({
       title: item.title,
@@ -236,8 +234,9 @@ async function searchGoogleNews(keyword, site = "") {
       source: item.displayLink
     }));
 
+
   } catch (err) {
-    console.log(err);
+    console.log("SEARCH ERROR:", err);
     return [];
   }
 }
@@ -253,8 +252,12 @@ async function searchAllNews(keyword) {
     "humas.polri.go.id",
     "detik.com",
     "kompas.com",
-    "antaranews.com"
+    "antaranews.com",
+    "cnnindonesia.com",
+    "tempo.co"
 ];
+
+  let semuaBerita = [];
 
   for (const site of sites) {
 
@@ -264,14 +267,14 @@ async function searchAllNews(keyword) {
 
     if (berita.length > 0) {
       console.log("Ditemukan di:", site);
-      return berita;
+
+      semuaBerita.push(...berita);
     }
 
   }
 
-  return [];
+  return semuaBerita.slice(0,5);
 }
- 
 
 /* =====================================================
    INTENT MATCHING (DINAMIS & AKURAT)
@@ -281,24 +284,31 @@ function isNewsIntent(userMessage) {
     console.log("Cek Intent Berita:", userMessage);
 
     const newsKeywords = [
-        "berita",
-        "kasus",
-        "narkoba",
-        "sabu",
-        "ganja",
-        "ekstasi",
-        "pelecehan",
-        "pencurian",
-        "maling",
-        "curat",
-        "curas",
-        "curanmor",
-        "begal",
-        "perampokan",
-        "pembunuhan",
-        "korupsi",
-        "kriminal"
-    ];
+    "berita",
+    "kasus",
+    "narkoba",
+    "sabu",
+    "ganja",
+    "ekstasi",
+    "pelecehan",
+    "pencurian",
+    "curat",
+    "curas",
+    "curanmor",
+    "begal",
+    "perampokan",
+    "pembunuhan",
+    "korupsi",
+    "kriminal",
+    "penipuan",
+    "penganiayaan",
+    "pemerkosaan",
+    "penangkapan",
+    "tersangka",
+    "terbaru",
+    "update",
+    "informasi"
+  ];
 
     const hasil = newsKeywords.some(keyword =>
         userMessage.includes(keyword)
@@ -312,12 +322,13 @@ function isNewsIntent(userMessage) {
 function getNewsKeyword(userMessage) {
 
     let keyword = userMessage
-        .replace(/\b(berita|kasus|hari ini|tentang|yang|di|oleh|dilakukan|lakukan|polisi|polda|sumut)\b/g, "")
+        .replace(/\b(berita|kasus|terbaru|hari ini|tentang|yang|di|oleh|dilakukan|lakukan|polisi|polda|sumut|sumatera utara)\b/g, "")
         .replace(/\s+/g, " ")
         .trim();
 
+
     if (!keyword) {
-        keyword = "kriminal";
+        keyword = "kriminal polda sumut";
     }
 
     return keyword;
