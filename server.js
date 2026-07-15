@@ -252,7 +252,7 @@ function isNewsIntent(userMessage) {
     "pelecehan", "pencurian", "curat", "curas", "curanmor",
     "begal", "perampokan", "pembunuhan", "korupsi", "kriminal",
     "penipuan", "penganiayaan", "pemerkosaan", "penangkapan",
-    "tersangka", "terbaru", "update", "informasi", "pengungkapan"
+    "tersangka", "terbaru", "update", "pengungkapan"
   ];
 
   const hasil = newsKeywords.some(keyword => userMessage.includes(keyword));
