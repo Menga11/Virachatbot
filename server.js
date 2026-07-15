@@ -230,11 +230,14 @@ async function searchGoogleNews(keyword, site = "") {
    GOOGLE NEWS AGGREGATOR
 ===================================================== */
 async function searchAllNews(keyword) {
-  const sites = [
-    "tbnews.polda.sumut.polri.go.id",
-    "detik.com",
-    "humas.polri.go.id"
-  ];
+
+    const berita = await searchGoogleNews(
+        keyword,
+        "tribratanews.sumut.polri.go.id"
+    );
+
+    return berita;
+}
 
   for (const site of sites) {
     console.log(`🔍 Mencari berita di ${site}...`);
@@ -249,7 +252,7 @@ async function searchAllNews(keyword) {
 
   console.log("❌ Tidak ditemukan di semua situs");
   return [];
-}
+
 
 /* =====================================================
    INTENT MATCHING (DINAMIS & AKURAT)
@@ -264,17 +267,20 @@ function isNewsIntent(userMessage) {
 }
 
 function getNewsKeyword(userMessage) {
-  let keyword = userMessage
-    .replace(/\b(berita|kasus|hari ini|tentang|di|sumut|polda|polisi)\b/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+
+    return userMessage
+        .replace(/\b(berita|kasus|hari ini|tentang|di|polisi|polda|sumut)\b/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+}
 
   if (!keyword) {
     keyword = "kriminal";
   }
 
   return `${keyword} polda sumut`;
-}
+
 
 function formatNewsResults(results) {
   if (!results || results.length === 0) {
@@ -326,13 +332,10 @@ app.post("/chat", async (req, res) => {
 
       // Jika tidak ditemukan di TBNews, Detik, maupun Humas Polri
         return res.json({
-  reply: `Maaf, berita mengenai "${keyword}" belum ditemukan pada sumber yang kami gunakan.
+    reply: `Maaf, berita mengenai "${keyword}" belum ditemukan di Website Resmi Tribrata News Polda Sumatera Utara.
 
 Silakan kunjungi:
-
-🔗 https://tbnews.polda.sumut.polri.go.id
-🔗 https://www.detik.com
-🔗 https://humas.polri.go.id`
+https://tribratanews.sumut.polri.go.id`
 });
     
       }
