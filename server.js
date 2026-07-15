@@ -169,8 +169,9 @@ app.post("/chat", async (req, res) => {
     // 2. CEK DATABASE (Aiven MySQL) - Dibungkus try-catch agar jika tabel belum ada, server TIDAK crash
     try {
       if (db) {
+        // Di dalam server.js (rute /chat bagian database)
         const queryDb = "SELECT jawaban, link FROM chatbot_memory WHERE pertanyaan LIKE ?";
-        const [rows] = await db.execute(queryDb, [`%${userMessage}%`]);
+        const [rows] = await db.query(queryDb, [`%${userMessage}%`]);
 
         if (rows && rows.length > 0) {
           const dataMatch = rows[0];

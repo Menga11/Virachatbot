@@ -1,44 +1,49 @@
 import mysql from "mysql2/promise";
 
-async function connectDB() {
-  try {
-    const connection = await mysql.createConnection({
+let pool = null;
+
+// Fungsi untuk mendapatkan koneksi database yang selalu siap (Reusable Pool)
+export function getDB() {
+  if (!pool) {
+    pool = mysql.createPool({
       host: process.env.DB_HOST || "localhost",
       user: process.env.DB_USER || "root",
       password: process.env.DB_PASSWORD || "",
       database: process.env.DB_NAME || "chatbot_polda",
       port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
-      ssl: process.env.DB_HOST ? { rejectUnauthorized: false } : null 
+      ssl: process.env.DB_HOST ? { rejectUnauthorized: false } : null,
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0
     });
 
-    console.log("Database connected successfully!");
+    console.log("Database Connection Pool Initialized!");
+    
+    // Jalankan pembuatan tabel secara otomatis di background
+    createTableIfNotExist(pool);
+  }
+  return pool;
+}
 
-    // 🔥 Buat tabel secara otomatis di Aiven Cloud jika belum ada
-    if (process.env.DB_HOST) {
-      const createTableQuery = `
-        CREATE TABLE IF NOT EXISTS chatbot_memory (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          pertanyaan TEXT,
-          jawaban TEXT,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-      `;
-      await connection.query(createTableQuery);
-      console.log("✅ Tabel 'chatbot_memory' otomatis terbuat di cloud!");
-    }
-
-    return connection;
+// Fungsi internal membuat tabel + kolom link
+async function createTableIfNotExist(dbPool) {
+  try {
+    const createTableQuery = `
+      CREATE TABLE IF NOT EXISTS chatbot_memory (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        pertanyaan TEXT,
+        jawaban TEXT,
+        link TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `;
+    await dbPool.query(createTableQuery);
+    console.log("✅ Tabel 'chatbot_memory' (dengan kolom link) siap digunakan!");
   } catch (error) {
-    console.error("Database connection failed:", error.message);
-    // Return mock object biar gak crash null.query()
-    return {
-      query: async () => [[]],
-      execute: async () => [[]],
-      on: () => {}
-    }; 
+    console.error("❌ Gagal membuat tabel otomatis:", error.message);
   }
 }
 
-const db = await connectDB();
-
+// Default export berupa pool agar kecocokan kode lama tetap terjaga
+const db = getDB();
 export default db;
