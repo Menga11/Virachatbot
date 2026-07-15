@@ -37,7 +37,6 @@ async function importDataJSON() {
       const link = item.link || null;
 
       for (const pertanyaan of keywords) {
-        // Menggunakan db.query agar aman di serverless pool
         const [cek] = await db.query(`SELECT * FROM chatbot_memory WHERE pertanyaan = ?`, [pertanyaan.toLowerCase()]);
         if (cek.length === 0) {
           await db.query(`INSERT INTO chatbot_memory (pertanyaan, jawaban, link) VALUES (?, ?, ?)`, [pertanyaan.toLowerCase(), jawaban, link]);
@@ -50,7 +49,7 @@ async function importDataJSON() {
   }
 }
 
-// Jalankan seeder di semua environment saat startup agar Aiven terisi otomatis
+// Jalankan seeder otomatis saat startup
 importDataJSON().catch(err => console.error("Error Seeder:", err));
 
 /* =====================================================
@@ -73,7 +72,10 @@ function isNewsIntent(userMessage) {
 async function dapatkanBeritaGemini(keyword) {
   try {
     const apiKey = process.env.API_KEY || process.env.API_KEY_2;
-    if (!apiKey) throw new Error("API Key Gemini tidak dikonfigurasi.");
+    if (!apiKey) {
+      console.warn("API Key tidak ditemukan di environment variable.");
+      return null;
+    }
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
@@ -111,7 +113,7 @@ async function dapatkanBeritaGemini(keyword) {
 async function tanyaGemini(userMessage) {
   try {
     const apiKey = process.env.API_KEY || process.env.API_KEY_2;
-    if (!apiKey) throw new Error("API Key Gemini tidak dikonfigurasi.");
+    if (!apiKey) return "Halo! Mohon maaf, API Key AI VIRA belum dikonfigurasi dengan benar di Vercel.";
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
@@ -136,7 +138,7 @@ async function tanyaGemini(userMessage) {
     return "Maaf, saat ini saya belum bisa memproses jawaban tersebut. Ada hal lain yang bisa VIRA bantu?";
   } catch (error) {
     console.error("Gagal menghubungi Gemini:", error);
-    return "Halo! Mohon maaf, layanan AI VIRA sedang mengalami gangguan koneksi. Silakan tanyakan hal lainnya.";
+    return "Halo! Mohon maaf, layanan AI VIRA sedang mengalami gangguan koneksi.";
   }
 }
 
@@ -152,7 +154,7 @@ app.post("/chat", async (req, res) => {
 
   const userMessage = inputPesan.trim().toLowerCase();
 
-  // ⚡ PROTEKSI UTAMA: Fitur Balasan Cepat Kata Sapaan (Langsung bypass tanpa DB/AI)
+  // ⚡ PROTEKSI 1: Fitur Balasan Cepat Kata Sapaan (Bypass Instan)
   const salamLokal = ["halo", "hi", "p", "siang", "pagi", "sore", "malam", "test", "tes", "assalamualaikum", "halo vira"];
   if (salamLokal.includes(userMessage)) {
     const sapaanRes = "Halo! Saya VIRA, asisten virtual Humas Polda Sumut. Ada yang bisa saya bantu hari ini?";
@@ -161,15 +163,16 @@ app.post("/chat", async (req, res) => {
 
   try {
     // 1. CEK INTENT BERITA TERLEBIH DAHULU
-    if (typeof isNewsIntent === "function" && isNewsIntent(userMessage)) {
+    if (isNewsIntent(userMessage)) {
       console.log(`[News] Mendeteksi pencarian berita: "${userMessage}"`);
-      try {
-        const beritaTerbaru = await dapatkanBeritaGemini(userMessage);
-        if (beritaTerbaru) {
-          return res.json({ jawaban: beritaTerbaru, reply: beritaTerbaru });
-        }
-      } catch (newsErr) {
-        console.error("Gagal mendapatkan berita dari Gemini:", newsErr);
+      const beritaTerbaru = await dapatkanBeritaGemini(userMessage);
+      
+      if (beritaTerbaru) {
+        return res.json({ jawaban: beritaTerbaru, reply: beritaTerbaru });
+      } else {
+        // Fallback Teks Berita Lokal jika API Key Kosong/Gagal Grounding
+        const beritaFallback = `Mengenai informasi "${inputPesan}", Anda dapat memantau rilis kasus resmi serta pembaruan kamtibmas terkini secara langsung melalui portal berita resmi Humas Polda Sumut di https://tribratanews.sumut.polri.go.id/`;
+        return res.json({ jawaban: beritaFallback, reply: beritaFallback });
       }
     }
 
@@ -199,7 +202,6 @@ app.post("/chat", async (req, res) => {
 
   } catch (error) {
     console.error("ERROR TOTAL PADA UTAMA CHAT:", error); 
-    // Fallback teks aman terakhir jika seluruh sistem di atas mengalami kegagalan fatal
     const fallbackPesan = "Halo! Mohon maaf, sistem VIRA sedang disesuaikan. Silakan ulangi pertanyaan Anda beberapa saat lagi.";
     res.json({ jawaban: fallbackPesan, reply: fallbackPesan });
   }
@@ -218,5 +220,4 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
-// Ekspor default untuk Vercel Serverless
 export default app;
