@@ -21,7 +21,7 @@ app.get("/", (req, res) => {
 });
 
 /* =====================================================
-   DATABASE SEEDER FROM JSON
+   DATABASE SEEDER FROM JSON (Auto-run aman di Cloud)
 ===================================================== */
 async function importDataJSON() {
   try {
@@ -37,9 +37,10 @@ async function importDataJSON() {
       const link = item.link || null;
 
       for (const pertanyaan of keywords) {
-        const [cek] = await db.execute(`SELECT * FROM chatbot_memory WHERE pertanyaan = ?`, [pertanyaan.toLowerCase()]);
+        // Menggunakan db.query agar aman di serverless pool
+        const [cek] = await db.query(`SELECT * FROM chatbot_memory WHERE pertanyaan = ?`, [pertanyaan.toLowerCase()]);
         if (cek.length === 0) {
-          await db.execute(`INSERT INTO chatbot_memory (pertanyaan, jawaban, link) VALUES (?, ?, ?)`, [pertanyaan.toLowerCase(), jawaban, link]);
+          await db.query(`INSERT INTO chatbot_memory (pertanyaan, jawaban, link) VALUES (?, ?, ?)`, [pertanyaan.toLowerCase(), jawaban, link]);
         }
       }
     }
@@ -49,10 +50,8 @@ async function importDataJSON() {
   }
 }
 
-// Jalankan seeder hanya jika di lokal (bukan di production Vercel)
-if (process.env.NODE_ENV !== "production") {
-  importDataJSON();
-}
+// Jalankan seeder di semua environment saat startup agar Aiven terisi otomatis
+importDataJSON().catch(err => console.error("Error Seeder:", err));
 
 /* =====================================================
    INTENT & NEWS DETECTOR
@@ -74,6 +73,8 @@ function isNewsIntent(userMessage) {
 async function dapatkanBeritaGemini(keyword) {
   try {
     const apiKey = process.env.API_KEY || process.env.API_KEY_2;
+    if (!apiKey) throw new Error("API Key Gemini tidak dikonfigurasi.");
+
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const response = await fetch(url, {
@@ -89,17 +90,14 @@ async function dapatkanBeritaGemini(keyword) {
             Sertakan juga satu tautan/link berita asli yang valid dari media kredibel (seperti detik.com, kompas.com, atau tribunnews) di bagian paling bawah dengan format: "Sumber berita: [Nama Media](URL)"`
           }]
         }],
-        // Mengaktifkan fitur pencarian Google langsung di dalam Gemini
         tools: [{ googleSearch: {} }]
       })
     });
 
     const data = await response.json();
-    
     if (data.candidates && data.candidates[0].content.parts[0].text) {
       return data.candidates[0].content.parts[0].text;
     }
-    
     return null;
   } catch (error) {
     console.error("Gagal mendapatkan berita via Gemini Search:", error);
@@ -113,6 +111,8 @@ async function dapatkanBeritaGemini(keyword) {
 async function tanyaGemini(userMessage) {
   try {
     const apiKey = process.env.API_KEY || process.env.API_KEY_2;
+    if (!apiKey) throw new Error("API Key Gemini tidak dikonfigurasi.");
+
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const promptSystem = `Anda adalah VIRA, maskot Chatbot Humas Polda Sumut yang ramah, sopan, dan informatif. 
@@ -133,10 +133,10 @@ async function tanyaGemini(userMessage) {
     if (data.candidates && data.candidates[0].content.parts[0].text) {
       return data.candidates[0].content.parts[0].text;
     }
-    return "Maaf, sistem sedang sibuk. Silakan coba lagi nanti.";
+    return "Maaf, saat ini saya belum bisa memproses jawaban tersebut. Ada hal lain yang bisa VIRA bantu?";
   } catch (error) {
     console.error("Gagal menghubungi Gemini:", error);
-    return "Maaf, terjadi gangguan saat menghubungi sistem AI.";
+    return "Halo! Mohon maaf, layanan AI VIRA sedang mengalami gangguan koneksi. Silakan tanyakan hal lainnya.";
   }
 }
 
@@ -152,6 +152,13 @@ app.post("/chat", async (req, res) => {
 
   const userMessage = inputPesan.trim().toLowerCase();
 
+  // ⚡ PROTEKSI UTAMA: Fitur Balasan Cepat Kata Sapaan (Langsung bypass tanpa DB/AI)
+  const salamLokal = ["halo", "hi", "p", "siang", "pagi", "sore", "malam", "test", "tes", "assalamualaikum", "halo vira"];
+  if (salamLokal.includes(userMessage)) {
+    const sapaanRes = "Halo! Saya VIRA, asisten virtual Humas Polda Sumut. Ada yang bisa saya bantu hari ini?";
+    return res.json({ jawaban: sapaanRes, reply: sapaanRes });
+  }
+
   try {
     // 1. CEK INTENT BERITA TERLEBIH DAHULU
     if (typeof isNewsIntent === "function" && isNewsIntent(userMessage)) {
@@ -159,17 +166,16 @@ app.post("/chat", async (req, res) => {
       try {
         const beritaTerbaru = await dapatkanBeritaGemini(userMessage);
         if (beritaTerbaru) {
-          return res.json({ jawaban: beritaTerbaru });
+          return res.json({ jawaban: beritaTerbaru, reply: beritaTerbaru });
         }
       } catch (newsErr) {
         console.error("Gagal mendapatkan berita dari Gemini:", newsErr);
       }
     }
 
-    // 2. CEK DATABASE (Aiven MySQL) - Dibungkus try-catch agar jika tabel belum ada, server TIDAK crash
+    // 2. CEK DATABASE (Aiven MySQL)
     try {
       if (db) {
-        // Di dalam server.js (rute /chat bagian database)
         const queryDb = "SELECT jawaban, link FROM chatbot_memory WHERE pertanyaan LIKE ?";
         const [rows] = await db.query(queryDb, [`%${userMessage}%`]);
 
@@ -179,22 +185,23 @@ app.post("/chat", async (req, res) => {
           if (dataMatch.link) {
             responsFinal += `\n\nUntuk informasi lebih lanjut, kunjungi: ${dataMatch.link}`;
           }
-          return res.json({ jawaban: responsFinal });
+          return res.json({ jawaban: responsFinal, reply: responsFinal });
         }
       }
     } catch (dbError) {
-      // Jika tabel chatbot_memory belum dibuat di Aiven, error ditangkap di sini tanpa mematikan aplikasi
-      console.error("Database error (Mungkin tabel belum terbuat/seeder belum jalan):", dbError.message);
+      console.error("Database error bypass:", dbError.message);
     }
 
-    // 3. FALLBACK KE GEMINI STANDAR (Jika tidak ada di DB / koneksi DB gagal)
+    // 3. FALLBACK KE GEMINI STANDAR
     console.log(`[Fallback] Menghubungi Gemini untuk: "${userMessage}"`);
     const jawabanAI = await tanyaGemini(userMessage);
-    return res.json({ jawaban: jawabanAI });
+    return res.json({ jawaban: jawabanAI, reply: jawabanAI });
 
   } catch (error) {
-    console.error("ERROR PADA UTAMA CHAT:", error); 
-    res.status(500).json({ error: "Server chatbot sedang bermasalah." });
+    console.error("ERROR TOTAL PADA UTAMA CHAT:", error); 
+    // Fallback teks aman terakhir jika seluruh sistem di atas mengalami kegagalan fatal
+    const fallbackPesan = "Halo! Mohon maaf, sistem VIRA sedang disesuaikan. Silakan ulangi pertanyaan Anda beberapa saat lagi.";
+    res.json({ jawaban: fallbackPesan, reply: fallbackPesan });
   }
 });
 
@@ -211,5 +218,5 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
-// Ekspor default aplikasi Express untuk dibaca oleh vercel.json
+// Ekspor default untuk Vercel Serverless
 export default app;
