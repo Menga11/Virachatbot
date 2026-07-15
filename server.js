@@ -25,11 +25,22 @@ app.get("/", (req, res) => {
 ===================================================== */
 async function setupDatabase() {
   try {
-    // 1. Pastikan kolom link ada dulu
-    await db.query("ALTER TABLE chatbot_memory ADD COLUMN IF NOT EXISTS link VARCHAR(255) NULL;");
-    console.log("✅ Struktur tabel siap.");
+    // HAPUS TABEL LAMA agar kolom baru bisa terbuat
+    await db.query("DROP TABLE IF EXISTS chatbot_memory;");
+    console.log("✅ Tabel lama dihapus, memulai pembuatan ulang...");
 
-    // 2. Baru jalankan import data
+    // BUAT ULANG TABEL DENGAN KOLOM LENGKAP
+    await db.query(`
+      CREATE TABLE chatbot_memory (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        pertanyaan VARCHAR(255),
+        jawaban TEXT,
+        link VARCHAR(255) NULL
+      );
+    `);
+    console.log("✅ Tabel baru berhasil dibuat.");
+
+    // IMPORT ULANG DATA DARI JSON
     const filePath = path.resolve(process.cwd(), "publik", "data.json");
     if (!fs.existsSync(filePath)) return;
     
@@ -42,18 +53,15 @@ async function setupDatabase() {
       const link = item.link || null;
 
       for (const pertanyaan of keywords) {
-        const [cek] = await db.query(`SELECT * FROM chatbot_memory WHERE pertanyaan = ?`, [pertanyaan.toLowerCase()]);
-        if (cek.length === 0) {
-          await db.query(`INSERT INTO chatbot_memory (pertanyaan, jawaban, link) VALUES (?, ?, ?)`, [pertanyaan.toLowerCase(), jawaban, link]);
-        }
+        await db.query(`INSERT INTO chatbot_memory (pertanyaan, jawaban, link) VALUES (?, ?, ?)`, 
+          [pertanyaan.toLowerCase(), jawaban, link]);
       }
     }
-    console.log("✅ Import data JSON selesai");
+    console.log("✅ Import data selesai!");
   } catch (error) {
-    console.log("❌ Gagal setup database:", error);
+    console.log("❌ Gagal total:", error);
   }
 }
-
 // Jalankan saat startup
 setupDatabase();
 /* =====================================================
