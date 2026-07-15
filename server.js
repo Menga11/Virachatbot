@@ -157,7 +157,7 @@ app.post("/chat", async (req, res) => {
     if (typeof importDataJSON === "function") {
       await importDataJSON(); 
     }
-    
+
     // 1. CEK INTENT BERITA TERLEBIH DAHULU
     if (isNewsIntent(userMessage)) {
       console.log(`[News] Mendeteksi pencarian berita: "${userMessage}"`);
@@ -187,8 +187,9 @@ app.post("/chat", async (req, res) => {
     return res.json({ jawaban: jawabanAI });
 
   } catch (error) {
-    console.error("Error pada endpoint /chat:", error);
-    return res.status(500).json({ error: "Terjadi kesalahan internal server." });
+    // Ubah bagian ini agar kita bisa melihat error-nya di Vercel Logs
+    console.error("ERROR PADA UTAMA CHAT:", error); 
+    res.status(500).json({ error: "Server chatbot sedang bermasalah." });
   }
 });
 
