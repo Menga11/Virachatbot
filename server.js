@@ -25,43 +25,28 @@ app.get("/", (req, res) => {
 ===================================================== */
 async function setupDatabase() {
   try {
-    // HAPUS TABEL LAMA agar kolom baru bisa terbuat
-    await db.query("DROP TABLE IF EXISTS chatbot_memory;");
-    console.log("✅ Tabel lama dihapus, memulai pembuatan ulang...");
-
-    // BUAT ULANG TABEL DENGAN KOLOM LENGKAP
+    // 1. Hapus paksa tabel lama (jangan pakai IF EXISTS agar bersih total)
+    await db.query("DROP TABLE chatbot_memory;").catch(() => {}); 
+    
+    // 2. Buat tabel baru dengan kolom yang benar
     await db.query(`
       CREATE TABLE chatbot_memory (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        pertanyaan VARCHAR(255),
+        pertanyaan TEXT,
         jawaban TEXT,
         link VARCHAR(255) NULL
       );
     `);
-    console.log("✅ Tabel baru berhasil dibuat.");
-
-    // IMPORT ULANG DATA DARI JSON
-    const filePath = path.resolve(process.cwd(), "publik", "data.json");
-    if (!fs.existsSync(filePath)) return;
     
-    const rawData = fs.readFileSync(filePath, "utf8");
-    const data = JSON.parse(rawData);
+    console.log("✅ Tabel baru berhasil dibuat dengan kolom 'link'.");
 
-    for (const item of data) {
-      const keywords = item.keyword;
-      const jawaban = item.jawaban;
-      const link = item.link || null;
-
-      for (const pertanyaan of keywords) {
-        await db.query(`INSERT INTO chatbot_memory (pertanyaan, jawaban, link) VALUES (?, ?, ?)`, 
-          [pertanyaan.toLowerCase(), jawaban, link]);
-      }
-    }
-    console.log("✅ Import data selesai!");
+    // 3. Lanjutkan dengan importDataJSON()...
   } catch (error) {
-    console.log("❌ Gagal total:", error);
+    console.error("❌ Gagal setup:", error);
   }
 }
+
+
 // Jalankan saat startup
 setupDatabase();
 /* =====================================================
