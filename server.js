@@ -79,13 +79,13 @@ async function askGemini(body) {
 }
 
 /* =====================================================
-   PREPROCESS TEXT & SYNONYMS (DI-FIX AGAR SPASI TIDAK HILANG)
+   PREPROCESS TEXT & SYNONYMS
 ===================================================== */
 function preprocess(text) {
   return String(text || "")
     .toLowerCase()
-    .replace(/[^a-zA-Z0-9\s]/g, "") // Hanya hapus simbol, amankan spasi (\s)
-    .replace(/\s+/g, " ")           // Satukan spasi ganda
+    .replace(/[^a-zA-Z0-9\s]/g, "") 
+    .replace(/\s+/g, " ")          
     .trim();
 }
 
@@ -200,44 +200,32 @@ async function searchGoogleNews(keyword, site = "") {
     const apiKey = process.env.GOOGLE_API_KEY;
     const cx = process.env.GOOGLE_CX;
 
-    let query = `("Polda Sumut" OR "Polda Sumatera Utara" OR "Polisi Sumut") ${keyword}`;
+    let query = `Polda Sumut ${keyword}`;
 
     if (site) {
-      query = `site:${site} (${keyword}) ("Polda Sumut" OR "Polda Sumatera Utara" OR "Sumatera Utara")`;
+      query = `site:${site} ${keyword} Polda Sumut`;
     }
-
 
     console.log("KEYWORD CARI:", keyword);
     console.log("QUERY:", query);
 
-    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}&num=5`;
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}&num=3`;
 
     const response = await fetch(url);
-
     if (!response.ok) {
       console.log("Google Search Error:", response.status);
       return [];
     }
 
     const data = await response.json();
-    console.log("GOOGLE DATA:", JSON.stringify(data).slice(0,500));
+    if (!data.items) return [];
 
-    if (!data.items) {
-      return [];
-    }
-
-
-    // Jangan filter terlalu ketat
-    const hasil = data.items;
-
-
-    return hasil.map(item => ({
+    return data.items.map(item => ({
       title: item.title,
       link: item.link,
-      source: item.displayLink
+      source: item.displayLink,
+      snippet: item.snippet || ""
     }));
-
-
   } catch (err) {
     console.log("SEARCH ERROR:", err);
     return [];
@@ -248,109 +236,41 @@ async function searchGoogleNews(keyword, site = "") {
    GOOGLE NEWS AGGREGATOR
 ===================================================== */
 async function searchAllNews(keyword) {
-
-  const sites = [
-    "tribratanews.sumut.polri.go.id",
-    "tbnews.polda.sumut.polri.go.id",
-    "humas.polri.go.id",
-    "detik.com",
-    "kompas.com",
-    "antaranews.com",
-    "cnnindonesia.com",
-    "tempo.co"
-];
-
-  let semuaBerita = [];
-
-  for (const site of sites) {
-
-    console.log("Mencari di:", site);
-
-    const berita = await searchGoogleNews(keyword, site);
-
-    if (berita.length > 0) {
-      console.log("Ditemukan di:", site);
-
-      semuaBerita.push(...berita);
-    }
-
-  }
-
-  return semuaBerita.slice(0,5);
+  console.log("PENCARIAN UMUM:", keyword);
+  const berita = await searchGoogleNews(keyword);
+  return berita.slice(0, 5);
 }
 
 /* =====================================================
-   INTENT MATCHING (DINAMIS & AKURAT)
+   INTENT MATCHING
 ===================================================== */
 function isNewsIntent(userMessage) {
+  console.log("Cek Intent Berita:", userMessage);
 
-    console.log("Cek Intent Berita:", userMessage);
-
-    const newsKeywords = [
-    "berita",
-    "kasus",
-    "narkoba",
-    "sabu",
-    "ganja",
-    "ekstasi",
-    "pelecehan",
-    "pencurian",
-    "curat",
-    "curas",
-    "curanmor",
-    "begal",
-    "perampokan",
-    "pembunuhan",
-    "korupsi",
-    "kriminal",
-    "penipuan",
-    "penganiayaan",
-    "pemerkosaan",
-    "penangkapan",
-    "tersangka",
-    "terbaru",
-    "update",
-    "informasi"
+  const newsKeywords = [
+    "berita", "kasus", "narkoba", "sabu", "ganja", "ekstasi",
+    "pelecehan", "pencurian", "curat", "curas", "curanmor",
+    "begal", "perampokan", "pembunuhan", "korupsi", "kriminal",
+    "penipuan", "penganiayaan", "pemerkosaan", "penangkapan",
+    "tersangka", "terbaru", "update", "informasi", "pengungkapan"
   ];
 
-    const hasil = newsKeywords.some(keyword =>
-        userMessage.includes(keyword)
-    );
-
-    console.log("Intent:", hasil);
-
-    return hasil;
+  const hasil = newsKeywords.some(keyword => userMessage.includes(keyword));
+  console.log("Intent:", hasil);
+  return hasil;
 }
 
 function getNewsKeyword(userMessage) {
+  let keyword = userMessage
+    .replace(/\b(berita|terbaru|hari ini|tentang|yang|di|oleh|dilakukan|lakukan|tampilkan|cari)\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
-    let keyword = userMessage
-        .replace(/\b(berita|kasus|terbaru|hari ini|tentang|yang|di|oleh|dilakukan|lakukan|polisi|polda|sumut|sumatera utara)\b/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-
-
-    if (!keyword) {
-        keyword = "kriminal polda sumut";
-    }
-
-    return keyword;
-}
-
-function formatNewsResults(results) {
-  if (!results || results.length === 0) {
-    return null;
+  if (!keyword) {
+    keyword = "kriminal polda sumut";
   }
 
-  let reply = "📰 Berikut berita yang ditemukan:\n\n";
-
-  results.forEach((item, index) => {
-    reply += `${index + 1}. ${item.title}\n`;
-    reply += `Sumber: ${item.source}\n`;
-    reply += `Link: ${item.link}\n\n`;
-  });
-
-  return reply.trim();
+  return keyword;
 }
 
 /* =====================================================
@@ -362,7 +282,7 @@ app.post("/chat", async (req, res) => {
       return res.status(400).json({ reply: "Pesan tidak boleh kosong." });
     }
 
-    const originalMessage = req.body.message; // Simpan pesan asli tanpa manipulasi untuk Gemini
+    const originalMessage = req.body.message; 
     let userMessage = preprocess(originalMessage);
     userMessage = replaceSynonyms(userMessage);
 
@@ -373,35 +293,54 @@ app.post("/chat", async (req, res) => {
       return res.json({ reply: "Halo, saya VIRA 👋\nAda yang bisa saya bantu?" });
     }
 
-    // 1. EKSEKUSI JALUR BERITA (Google Search API + Gemini Fallback Terarah)
+    // 1. EKSEKUSI JALUR BERITA (Google Search API + Gemini Narasi)
     if (isNewsIntent(userMessage)) {
+      const keyword = getNewsKeyword(userMessage);
+      console.log("KEYWORD GOOGLE SEARCH JALAN:", keyword);
 
-    const keyword = getNewsKeyword(userMessage);
-    console.log("KEYWORD GOOGLE SEARCH JALAN:", keyword);
+      const hasilBerita = await searchAllNews(keyword);
 
-    const hasilBerita = await searchAllNews(keyword);
+      console.log("Keyword:", keyword);
+      console.log("Jumlah berita:", hasilBerita.length);
 
-    console.log("Keyword:", keyword);
-    console.log("Jumlah berita:", hasilBerita.length);
-    console.log(hasilBerita);
+      if (hasilBerita.length > 0) {
+        const konteksBerita = hasilBerita.map((b, i) => `Berita ${i+1}: ${b.title} (Sumber: ${b.source})`).join("\n");
 
-    if (hasilBerita.length > 0) {
-        return res.json({
-            reply: formatNewsResults(hasilBerita)
+        const bodyGeminiNews = {
+          systemInstruction: {
+            parts: [{
+              text: `Kamu adalah VIRA, Chatbot resmi Humas Polda Sumut. Tugasmu adalah membuat satu kalimat narasi pembuka yang santun dan informatif mengenai pengungkapan kasus/berita berdasarkan data yang diberikan oleh user. 
+              
+Contoh gaya bahasa yang diinginkan: "Berikut adalah informasi mengenai pengungkapan kasus narkoba yang dilakukan oleh Polda Sumut di daerah Medan..." (sesuaikan dengan data berita yang ada). Jangan berikan link di dalam teks narasimu.`
+            }]
+          },
+          contents: [{ role: "user", parts: [{ text: `Tolong buatkan kalimat pembuka dari data berita berikut:\n${konteksBerita}` }] }]
+        };
+
+        const dataGemini = await askGemini(bodyGeminiNews);
+        const narasiPembuka = dataGemini?.candidates?.[0]?.content?.parts?.[0]?.text || `Berikut adalah informasi mengenai pengungkapan kasus terkait "${keyword}" oleh Polda Sumut:`;
+
+        let reply = `${narasiPembuka.trim()}\n\n🌐 **Link berita terkait:**\n`;
+        hasilBerita.forEach((item, index) => {
+          reply += `${index + 1}. ${item.title}\n🔗 ${item.link}\n\n`;
         });
+
+        return res.json({ reply: reply.trim() });
+      }
+
+      // Fallback jika Google Search kosong
+      const bodyGeminiEmpty = {
+        systemInstruction: {
+          parts: [{
+            text: `Kamu adalah VIRA, Chatbot Humas Polda Sumut. User menanyakan berita "${originalMessage}" namun tidak ditemukan di Google Search. Jawab dengan sopan bahwa informasi spesifik tersebut belum masuk ke sistem, lalu berikan imbauan kamtibmas singkat yang relevan.`
+          }]
+        },
+        contents: [{ role: "user", parts: [{ text: originalMessage }] }]
+      };
+      
+      const dataEmpty = await askGemini(bodyGeminiEmpty);
+      return res.json({ reply: dataEmpty?.candidates?.[0]?.content?.parts?.[0]?.text || "Informasi belum tersedia." });
     }
-
-    return res.json({
-        reply: `Maaf, berita mengenai "${keyword}" belum ditemukan pada sumber berita yang digunakan.
-
-Sumber pencarian:
-• Tribrata News Sumut
-• Humas Polri
-• Detik
-• Kompas
-• Antara`
-    });
-}
 
     /* ================= DATABASE SEARCH ================= */
     const [allRows] = await db.execute("SELECT * FROM chatbot_memory");
@@ -460,9 +399,9 @@ Sumber pencarian:
   } catch (error) {
     console.log("CHAT ERROR:", error);
     return res.status(500).json({
-        reply: "Terjadi kesalahan pada server"
+      reply: "Terjadi kesalahan pada server"
     });
-}
+  }
 });
 
 /* =====================================================
@@ -494,16 +433,24 @@ async function importDataJSON() {
   }
 }
 
-importDataJSON();
+// HANYA JALANKAN SEEDER JIKA DI LOKAL (BUKAN DI PRODUCTION VERCEL)
+if (process.env.NODE_ENV !== "production") {
+  importDataJSON();
+}
 
 /* =====================================================
    STARTUP & LISTEN
 ===================================================== */
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("=================================");
-  console.log(`Server berjalan di port: ${PORT}`);
-  console.log("=================================");
-});
 
+// HANYA JALANKAN APP.LISTEN JIKA DI LOKAL (BUKAN DI VERCEL)
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log("=================================");
+    console.log(`Server berjalan di port: ${PORT}`);
+    console.log("=================================");
+  });
+}
+
+// WAJIB BAGI VERCEL: Ekspor aplikasi Express Anda
 export default app;
