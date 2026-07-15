@@ -277,13 +277,36 @@ async function searchAllNews(keyword) {
    INTENT MATCHING (DINAMIS & AKURAT)
 ===================================================== */
 function isNewsIntent(userMessage) {
-  const newsKeywords = [
-    "berita", "kasus", "narkoba", "sabu", "ganja", "ekstasi",
-    "pelecehan", "pencurian", "maling", "curat", "curas",
-    "curanmor", "begal", "perampokan", "pembunuhan", "korupsi", "kriminal"
-  ];
 
-  return newsKeywords.some(keyword => userMessage.includes(keyword));
+    console.log("Cek Intent Berita:", userMessage);
+
+    const newsKeywords = [
+        "berita",
+        "kasus",
+        "narkoba",
+        "sabu",
+        "ganja",
+        "ekstasi",
+        "pelecehan",
+        "pencurian",
+        "maling",
+        "curat",
+        "curas",
+        "curanmor",
+        "begal",
+        "perampokan",
+        "pembunuhan",
+        "korupsi",
+        "kriminal"
+    ];
+
+    const hasil = newsKeywords.some(keyword =>
+        userMessage.includes(keyword)
+    );
+
+    console.log("Intent:", hasil);
+
+    return hasil;
 }
 
 function getNewsKeyword(userMessage) {
@@ -338,27 +361,33 @@ app.post("/chat", async (req, res) => {
 
     // 1. EKSEKUSI JALUR BERITA (Google Search API + Gemini Fallback Terarah)
     if (isNewsIntent(userMessage)) {
-      const keyword = getNewsKeyword(userMessage);
-      console.log("KEYWORD GOOGLE SEARCH JALAN:", keyword);
 
-      const hasilBerita = await searchAllNews(keyword);
+    const keyword = getNewsKeyword(userMessage);
+    console.log("KEYWORD GOOGLE SEARCH JALAN:", keyword);
 
-      if (hasilBerita && hasilBerita.length > 0) {
+    const hasilBerita = await searchAllNews(keyword);
+
+    console.log("Keyword:", keyword);
+    console.log("Jumlah berita:", hasilBerita.length);
+    console.log(hasilBerita);
+
+    if (hasilBerita.length > 0) {
         return res.json({
-          reply: formatNewsResults(hasilBerita)
+            reply: formatNewsResults(hasilBerita)
         });
-      }
+    }
 
-      // Jika tidak ditemukan di TBNews, Detik, maupun Humas Polri
+    return res.json({
         reply: `Maaf, berita mengenai "${keyword}" belum ditemukan pada sumber berita yang digunakan.
 
-          Sumber pencarian:
-          • Tribrata News Sumut
-          • Humas Polri
-          • Detik
-          • Kompas
-          • Antara`
-          };
+Sumber pencarian:
+• Tribrata News Sumut
+• Humas Polri
+• Detik
+• Kompas
+• Antara`
+    });
+}
 
     /* ================= DATABASE SEARCH ================= */
     const [allRows] = await db.execute("SELECT * FROM chatbot_memory");
@@ -416,8 +445,10 @@ app.post("/chat", async (req, res) => {
 
   } catch (error) {
     console.log("CHAT ERROR:", error);
-    return res.status(500).json({ reply: "Terjadi kesalahan pada server" });
-  }
+    return res.status(500).json({
+        reply: "Terjadi kesalahan pada server"
+    });
+}
 });
 
 /* =====================================================
