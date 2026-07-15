@@ -144,12 +144,14 @@ async function tanyaGemini(userMessage) {
    ROUTE: UTAMA (CHAT HANDLER)
 ===================================================== */
 app.post("/chat", async (req, res) => {
-  const { pesan } = req.body;
-  if (!pesan) {
+  // Mengambil input baik dari properti 'pesan', 'message', atau 'text' agar tidak memicu error 400
+  const inputPesan = req.body.pesan || req.body.message || req.body.text;
+
+  if (!inputPesan) {
     return res.status(400).json({ error: "Pesan tidak boleh kosong" });
   }
 
-  const userMessage = pesan.trim().toLowerCase();
+  const userMessage = inputPesan.trim().toLowerCase();
 
   try {
     // 1. CEK INTENT BERITA TERLEBIH DAHULU
