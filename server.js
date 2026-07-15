@@ -21,10 +21,15 @@ app.get("/", (req, res) => {
 });
 
 /* =====================================================
-   DATABASE SEEDER FROM JSON (Auto-run aman di Cloud)
+   DATABASE SEEDER & SCHEMA FIXER
 ===================================================== */
-async function importDataJSON() {
+async function setupDatabase() {
   try {
+    // 1. Pastikan kolom link ada dulu
+    await db.query("ALTER TABLE chatbot_memory ADD COLUMN IF NOT EXISTS link VARCHAR(255) NULL;");
+    console.log("✅ Struktur tabel siap.");
+
+    // 2. Baru jalankan import data
     const filePath = path.resolve(process.cwd(), "publik", "data.json");
     if (!fs.existsSync(filePath)) return;
     
@@ -43,15 +48,14 @@ async function importDataJSON() {
         }
       }
     }
-    console.log("Import data JSON selesai");
+    console.log("✅ Import data JSON selesai");
   } catch (error) {
-    console.log("Gagal import JSON:", error);
+    console.log("❌ Gagal setup database:", error);
   }
 }
 
-// Jalankan seeder otomatis saat startup
-importDataJSON().catch(err => console.error("Error Seeder:", err));
-
+// Jalankan saat startup
+setupDatabase();
 /* =====================================================
    INTENT & NEWS DETECTOR
 ===================================================== */
