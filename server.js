@@ -144,7 +144,6 @@ async function tanyaGemini(userMessage) {
    ROUTE: UTAMA (CHAT HANDLER)
 ===================================================== */
 app.post("/chat", async (req, res) => {
-  // Mengambil input baik dari properti 'pesan', 'message', atau 'text' agar tidak memicu error 400
   const inputPesan = req.body.pesan || req.body.message || req.body.text;
 
   if (!inputPesan) {
@@ -154,6 +153,11 @@ app.post("/chat", async (req, res) => {
   const userMessage = inputPesan.trim().toLowerCase();
 
   try {
+    // TAMBAHKAN BARIS INI: Memastikan tabel dibuat & diisi jika Aiven masih kosong
+    if (typeof importDataJSON === "function") {
+      await importDataJSON(); 
+    }
+    
     // 1. CEK INTENT BERITA TERLEBIH DAHULU
     if (isNewsIntent(userMessage)) {
       console.log(`[News] Mendeteksi pencarian berita: "${userMessage}"`);
