@@ -324,33 +324,18 @@ app.post("/chat", async (req, res) => {
         });
       }
 
-      // JIKA GOOGLE API KOSONG/LIMIT -> Langsung dialihkan ke Gemini AI dengan instruksi spesifik kasus terkini
-      console.log("Pencarian Google kosong/limit, mengalihkan ringkasan berita langsung ke Gemini AI...");
-      
-      const bodyBerita = {
-        systemInstruction: {
-          parts: [{
-            text: `Kamu adalah VIRA, Chatbot resmi Humas Polda Sumut. User ingin melihat berita kriminal/kasus terkini. Jangan memberikan sambutan formal yang panjang atau penjelasan normatif tentang komitmen Polda. 
+      // Jika tidak ditemukan di TBNews, Detik, maupun Humas Polri
+        return res.json({
+  reply: `Maaf, berita mengenai "${keyword}" belum ditemukan pada sumber yang kami gunakan.
 
-Langsung sajikan 2-3 daftar berita kasus "${originalMessage}" terbaru di Sumatera Utara yang ada dalam ingatan pengetahuanmu dengan format ringkas seperti ini:
+Silakan kunjungi:
 
-📰 [Judul Berita Aktual/Spesifik]
-📅 [Tanggal Kejadian/Rilis]
-Ringkasan: [Jelaskan kronologi singkat penangkapan, lokasi di Sumut, nama polres/polsek yang menangani, dan jumlah barang bukti secara detail].
-
-Di akhir jawaban, langsung tambahkan teks ini tanpa spasi berlebih:
-"\nUntuk pembaruan berita selengkapnya, silakan kunjungi portal resmi kami di: 🔗 https://tribratanews.sumut.polri.go.id/ atau detik.com."`
-          }]
-        },
-        contents: [{ role: "user", parts: [{ text: originalMessage }] }]
-      };
-
-      const dataBerita = await askGemini(bodyBerita);
-      if (dataBerita) {
-        const replyBerita = dataBerita?.candidates?.[0]?.content?.parts?.[0]?.text || "Informasi saat ini belum tersedia.";
-        return res.json({ reply: replyBerita });
+🔗 https://tbnews.polda.sumut.polri.go.id
+🔗 https://www.detik.com
+🔗 https://humas.polri.go.id`
+});
+    
       }
-    }
 
     /* ================= DATABASE SEARCH ================= */
     const [allRows] = await db.execute("SELECT * FROM chatbot_memory");
