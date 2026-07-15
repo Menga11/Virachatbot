@@ -44,7 +44,8 @@ async function askGemini(body) {
       );
 
       const data = await response.json();
-      console.log("TOTAL GOOGLE ITEM:", data.items?.length || 0);
+
+      console.log("STATUS GEMINI:", response.status);
 
       if (response.ok) {
         console.log(`Menggunakan API ${API_KEYS.indexOf(apiKey) + 1}`);
@@ -67,6 +68,7 @@ async function askGemini(body) {
       }
 
       console.log("GEMINI ERROR:", data);
+
     } catch (error) {
       console.log("GEMINI FETCH ERROR:", error);
     }
@@ -218,6 +220,7 @@ async function searchGoogleNews(keyword, site = "") {
     }
 
     const data = await response.json();
+    console.log("GOOGLE DATA:", JSON.stringify(data).slice(0,500));
 
     if (!data.items) {
       return [];
