@@ -1,408 +1,19 @@
 import express from "express";
-import path from "path";
+import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
 import fs from "fs";
 import fetch from "node-fetch";
 import db from "./db.js";
-import levenshtein from "fast-levenshtein";
 
 dotenv.config();
 
 const app = express();
 
-console.log("Express berhasil jalan");
-
-/* =====================================================
-   MIDDLEWARE
-===================================================== */
+// Middleware
+app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(process.cwd(), "publik")));
-
-/* =====================================================
-   API KEYS (GEMINI)
-===================================================== */
-const API_KEYS = [
-  process.env.API_KEY,
-  process.env.API_KEY_2
-].filter(Boolean);
-
-/* =====================================================
-   GEMINI API WORKER
-===================================================== */
-async function askGemini(body) {
-  for (const apiKey of API_KEYS) {
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(body)
-        }
-      );
-
-      const data = await response.json();
-
-      console.log("STATUS GEMINI:", response.status);
-
-      if (response.ok) {
-        console.log(`Menggunakan API ${API_KEYS.indexOf(apiKey) + 1}`);
-        return data;
-      }
-
-      if (
-        response.status === 429 ||
-        data?.error?.message?.toLowerCase()?.includes("quota")
-      ) {
-        console.log(`API ${API_KEYS.indexOf(apiKey) + 1} quota habis`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        continue;
-      }
-
-      if (response.status === 503) {
-        console.log(`API ${API_KEYS.indexOf(apiKey) + 1} sibuk`);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        continue;
-      }
-
-      console.log("GEMINI ERROR:", data);
-
-    } catch (error) {
-      console.log("GEMINI FETCH ERROR:", error);
-    }
-  }
-
-  console.log("Semua API telah mencapai limit");
-  return null;
-}
-
-/* =====================================================
-   PREPROCESS TEXT & SYNONYMS
-===================================================== */
-function preprocess(text) {
-  return String(text || "")
-    .toLowerCase()
-    .replace(/[^a-zA-Z0-9\s]/g, "") 
-    .replace(/\s+/g, " ")          
-    .trim();
-}
-
-function replaceSynonyms(text) {
-  const synonyms = {
-    "surat kelakuan baik": "skck",
-    "buat skck": "skck",
-    "bikin skck": "skck",
-    "cara buat skck": "skck",
-    "sim mati": "perpanjang sim",
-    "kehilangan sim": "sim hilang",
-    "buat sim": "sim",
-    "jam buka": "jam pelayanan",
-    "jam operasional": "jam pelayanan",
-    "kontak humas": "kontak humas polda",
-    "cara minta informasi": "permintaan informasi online",
-    "curanwor": "curanmor"
-  };
-
-  for (const key in synonyms) {
-    if (text.includes(key)) {
-      text = text.replace(key, synonyms[key]);
-    }
-  }
-  return text;
-}
-
-function isGreeting(text) {
-  const greetings = ["halo", "hai", "hi", "selamat pagi", "selamat siang", "selamat sore", "p", "permisi"];
-  return greetings.includes(text);
-}
-
-/* =====================================================
-   NATURAL RESPONSE DATABASE
-===================================================== */
-function naturalResponse(jawaban) {
-  if (jawaban.toLowerCase().includes("ada yang bisa saya bantu")) {
-    return jawaban;
-  }
-
-  const templates = [
-    `Baik, berikut informasinya:\n${jawaban}`,
-    `Berikut informasi yang dapat kami sampaikan:\n${jawaban}`,
-    `${jawaban}`
-  ];
-
-  return templates[Math.floor(Math.random() * templates.length)];
-}
-
-/* =====================================================
-   ROUTE PAGES
-===================================================== */
-app.get("/", (req, res) => {
-  res.sendFile(path.join(process.cwd(), "publik", "pages", "index.html"));
-});
-
-app.get("/multimedia", (req, res) => {
-  res.sendFile(path.join(process.cwd(), "publik", "pages", "multimedia.html"));
-});
-
-app.get("/pid", (req, res) => {
-  res.sendFile(path.join(process.cwd(), "publik", "pages", "pid.html"));
-});
-
-app.get("/pemnas", (req, res) => {
-  res.sendFile(path.join(process.cwd(), "publik", "pages", "pemnas.html"));
-});
-
-app.get("/kontak", (req, res) => {
-  res.sendFile(path.join(process.cwd(), "publik", "pages", "kontak.html"));
-});
-
-/* =====================================================
-   TYPO DATABASE (LEVENSHTEIN)
-===================================================== */
-async function findBestMatch(userMessage) {
-  const [rows] = await db.execute("SELECT * FROM chatbot_memory");
-  const userWords = userMessage.split(" ");
-
-  let bestMatch = null;
-  let smallestDistance = 999;
-
-  for (const row of rows) {
-    const dbWords = row.pertanyaan.toLowerCase().split(" ");
-
-    for (const word of userWords) {
-      for (const dbWord of dbWords) {
-        const distance = levenshtein.get(word, dbWord);
-
-        if (distance < smallestDistance) {
-          smallestDistance = distance;
-          bestMatch = row;
-        }
-      }
-    }
-  }
-
-  if (smallestDistance <= 2) {
-    return {
-      match: bestMatch,
-      distance: smallestDistance
-    };
-  }
-  return null;
-}
-
-/* =====================================================
-   GOOGLE SEARCH API WORKER
-===================================================== */
-async function searchGoogleNews(keyword, site = "") {
-  try {
-    const apiKey = process.env.GOOGLE_API_KEY;
-    const cx = process.env.GOOGLE_CX;
-
-    let query = `Polda Sumut ${keyword}`;
-
-    if (site) {
-      query = `site:${site} ${keyword} Polda Sumut`;
-    }
-
-    console.log("KEYWORD CARI:", keyword);
-    console.log("QUERY:", query);
-
-    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}&num=3`;
-
-    const response = await fetch(url);
-    if (!response.ok) {
-      console.log("Google Search Error:", response.status);
-      return [];
-    }
-
-    const data = await response.json();
-    if (!data.items) return [];
-
-    return data.items.map(item => ({
-      title: item.title,
-      link: item.link,
-      source: item.displayLink,
-      snippet: item.snippet || ""
-    }));
-  } catch (err) {
-    console.log("SEARCH ERROR:", err);
-    return [];
-  }
-}
-
-/* =====================================================
-   GOOGLE NEWS AGGREGATOR
-===================================================== */
-async function searchAllNews(keyword) {
-  console.log("PENCARIAN UMUM:", keyword);
-  const berita = await searchGoogleNews(keyword);
-  return berita.slice(0, 5);
-}
-
-/* =====================================================
-   INTENT MATCHING
-===================================================== */
-function isNewsIntent(userMessage) {
-  console.log("Cek Intent Berita:", userMessage);
-
-  const newsKeywords = [
-    "berita", "kasus", "narkoba", "sabu", "ganja", "ekstasi",
-    "pelecehan", "pencurian", "curat", "curas", "curanmor",
-    "begal", "perampokan", "pembunuhan", "korupsi", "kriminal",
-    "penipuan", "penganiayaan", "pemerkosaan", "penangkapan",
-    "tersangka", "terbaru", "update", "pengungkapan"
-  ];
-
-  const hasil = newsKeywords.some(keyword => userMessage.includes(keyword));
-  console.log("Intent:", hasil);
-  return hasil;
-}
-
-function getNewsKeyword(userMessage) {
-  let keyword = userMessage
-    .replace(/\b(berita|terbaru|hari ini|tentang|yang|di|oleh|dilakukan|lakukan|tampilkan|cari)\b/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (!keyword) {
-    keyword = "kriminal polda sumut";
-  }
-
-  return keyword;
-}
-
-/* =====================================================
-   CHATBOT MAIN ENDPOINT
-===================================================== */
-app.post("/chat", async (req, res) => {
-  try {
-    if (!req.body || typeof req.body.message !== "string" || !req.body.message.trim()) {
-      return res.status(400).json({ reply: "Pesan tidak boleh kosong." });
-    }
-
-    const originalMessage = req.body.message; 
-    let userMessage = preprocess(originalMessage);
-    userMessage = replaceSynonyms(userMessage);
-
-    console.log("=================================");
-    console.log("Pesan Masuk:", userMessage);
-
-    if (isGreeting(userMessage)) {
-      return res.json({ reply: "Halo, saya VIRA 👋\nAda yang bisa saya bantu?" });
-    }
-
-    // 1. EKSEKUSI JALUR BERITA (Google Search API + Gemini Narasi)
-    if (isNewsIntent(userMessage)) {
-      const keyword = getNewsKeyword(userMessage);
-      console.log("KEYWORD GOOGLE SEARCH JALAN:", keyword);
-
-      const hasilBerita = await searchAllNews(keyword);
-
-      console.log("Keyword:", keyword);
-      console.log("Jumlah berita:", hasilBerita.length);
-
-      if (hasilBerita.length > 0) {
-        const konteksBerita = hasilBerita.map((b, i) => `Berita ${i+1}: ${b.title} (Sumber: ${b.source})`).join("\n");
-
-        const bodyGeminiNews = {
-          systemInstruction: {
-            parts: [{
-              text: `Kamu adalah VIRA, Chatbot resmi Humas Polda Sumut. Tugasmu adalah membuat satu kalimat narasi pembuka yang santun dan informatif mengenai pengungkapan kasus/berita berdasarkan data yang diberikan oleh user. 
-              
-Contoh gaya bahasa yang diinginkan: "Berikut adalah informasi mengenai pengungkapan kasus narkoba yang dilakukan oleh Polda Sumut di daerah Medan..." (sesuaikan dengan data berita yang ada). Jangan berikan link di dalam teks narasimu.`
-            }]
-          },
-          contents: [{ role: "user", parts: [{ text: `Tolong buatkan kalimat pembuka dari data berita berikut:\n${konteksBerita}` }] }]
-        };
-
-        const dataGemini = await askGemini(bodyGeminiNews);
-        const narasiPembuka = dataGemini?.candidates?.[0]?.content?.parts?.[0]?.text || `Berikut adalah informasi mengenai pengungkapan kasus terkait "${keyword}" oleh Polda Sumut:`;
-
-        let reply = `${narasiPembuka.trim()}\n\n🌐 **Link berita terkait:**\n`;
-        hasilBerita.forEach((item, index) => {
-          reply += `${index + 1}. ${item.title}\n🔗 ${item.link}\n\n`;
-        });
-
-        return res.json({ reply: reply.trim() });
-      }
-
-      // Fallback jika Google Search kosong
-      const bodyGeminiEmpty = {
-        systemInstruction: {
-          parts: [{
-            text: `Kamu adalah VIRA, Chatbot Humas Polda Sumut. User menanyakan berita "${originalMessage}" namun tidak ditemukan di Google Search. Jawab dengan sopan bahwa informasi spesifik tersebut belum masuk ke sistem, lalu berikan imbauan kamtibmas singkat yang relevan.`
-          }]
-        },
-        contents: [{ role: "user", parts: [{ text: originalMessage }] }]
-      };
-      
-      const dataEmpty = await askGemini(bodyGeminiEmpty);
-      return res.json({ reply: dataEmpty?.candidates?.[0]?.content?.parts?.[0]?.text || "Informasi belum tersedia." });
-    }
-
-    /* ================= DATABASE SEARCH ================= */
-    const [allRows] = await db.execute("SELECT * FROM chatbot_memory");
-    let bestMatch = null;
-    let highestScore = 0;
-    const userWords = userMessage.split(" ");
-
-    for (const row of allRows) {
-      const dbQuestion = row.pertanyaan.toLowerCase();
-      let score = 0;
-
-      for (const word of userWords) {
-        if (dbQuestion.split(" ").includes(word)) score++;
-      }
-      if (userMessage.includes(dbQuestion)) score += 2;
-
-      if (score > highestScore) {
-        highestScore = score;
-        bestMatch = row;
-      }
-    }
-
-    console.log("BEST SCORE DATABASE:", highestScore);
-
-    if (bestMatch && highestScore > 4) {
-      let finalReply = naturalResponse(bestMatch.jawaban);
-      if (bestMatch.link) finalReply += `\n\nDokumen terkait:\n${bestMatch.link}`;
-      return res.json({ reply: finalReply });
-    }
-
-    const typoResult = await findBestMatch(userMessage);
-    if (typoResult && userWords.length === 1 && typoResult.distance <= 1) {
-      let finalReply = naturalResponse(typoResult.match.jawaban);
-      if (typoResult.match.link) finalReply += `\n\nDokumen terkait:\n${typoResult.match.link}`;
-      return res.json({ reply: finalReply });
-    }
-
-    /* ================= GEMINI FALLBACK UMUM ================= */
-    console.log("Mengambil jawaban umum dari Gemini");
-
-    const body = {
-      systemInstruction: {
-        parts: [{
-          text: `Kamu adalah VIRA. Chatbot resmi Humas Polda Sumut. Jawab dengan singkat dan profesional. Jika informasi tidak diketahui atau tidak tersedia, katakan bahwa informasi tersebut belum tersedia.`
-        }]
-      },
-      contents: [{ role: "user", parts: [{ text: originalMessage }] }]
-    };
-
-    const data = await askGemini(body);
-    if (!data) return res.json({ reply: "Seluruh layanan informasi sedang padat. Silakan coba beberapa saat lagi." });
-
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Informasi tidak tersedia";
-    return res.json({ reply });
-
-  } catch (error) {
-    console.log("CHAT ERROR:", error);
-    return res.status(500).json({
-      reply: "Terjadi kesalahan pada server"
-    });
-  }
-});
 
 /* =====================================================
    DATABASE SEEDER FROM JSON
@@ -433,24 +44,155 @@ async function importDataJSON() {
   }
 }
 
-// HANYA JALANKAN SEEDER JIKA DI LOKAL (BUKAN DI PRODUCTION VERCEL)
+// Jalankan seeder hanya jika di lokal (bukan di production Vercel)
 if (process.env.NODE_ENV !== "production") {
   importDataJSON();
 }
+
+/* =====================================================
+   INTENT & NEWS DETECTOR
+===================================================== */
+function isNewsIntent(userMessage) {
+  const newsKeywords = [
+    "berita", "kasus", "narkoba", "sabu", "ganja", "ekstasi",
+    "pelecehan", "pencurian", "curat", "curas", "curanmor",
+    "begal", "perampokan", "pembunuhan", "korupsi", "kriminal",
+    "penipuan", "penganiayaan", "pemerkosaan", "penangkapan",
+    "tersangka", "terbaru", "update", "pengungkapan"
+  ];
+  return newsKeywords.some(keyword => userMessage.toLowerCase().includes(keyword));
+}
+
+/* =====================================================
+   GEMINI SEARCH GROUNDING (BROWSER BERITA)
+===================================================== */
+async function dapatkanBeritaGemini(keyword) {
+  try {
+    const apiKey = process.env.API_KEY || process.env.API_KEY_2;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `Temukan 1 berita paling hangat, valid, dan riil mengenai "${keyword} di Sumatera Utara atau Polda Sumut" yang terjadi baru-baru ini. 
+            Tuliskan ringkasan berita tersebut maksimal 3 kalimat secara informatif sebagai VIRA, Chatbot Humas Polda Sumut. 
+            Sertakan juga satu tautan/link berita asli yang valid dari media kredibel (seperti detik.com, kompas.com, atau tribunnews) di bagian paling bawah dengan format: "Sumber berita: [Nama Media](URL)"`
+          }]
+        }],
+        // Mengaktifkan fitur pencarian Google langsung di dalam Gemini
+        tools: [{ googleSearch: {} }]
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.candidates && data.candidates[0].content.parts[0].text) {
+      return data.candidates[0].content.parts[0].text;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Gagal mendapatkan berita via Gemini Search:", error);
+    return null;
+  }
+}
+
+/* =====================================================
+   GEMINI AI CHAT (FALLBACK)
+===================================================== */
+async function tanyaGemini(userMessage) {
+  try {
+    const apiKey = process.env.API_KEY || process.env.API_KEY_2;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const promptSystem = `Anda adalah VIRA, maskot Chatbot Humas Polda Sumut yang ramah, sopan, dan informatif. 
+    Gunakan bahasa Indonesia yang santun. Jawab pesan user dengan informasi kamtibmas atau pelayanan polisi yang relevan.
+    Pesan user: "${userMessage}"`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: promptSystem }] }]
+      })
+    });
+
+    const data = await response.json();
+    if (data.candidates && data.candidates[0].content.parts[0].text) {
+      return data.candidates[0].content.parts[0].text;
+    }
+    return "Maaf, sistem sedang sibuk. Silakan coba lagi nanti.";
+  } catch (error) {
+    console.error("Gagal menghubungi Gemini:", error);
+    return "Maaf, terjadi gangguan saat menghubungi sistem AI.";
+  }
+}
+
+/* =====================================================
+   ROUTE: UTAMA (CHAT HANDLER)
+===================================================== */
+app.post("/chat", async (req, res) => {
+  const { pesan } = req.body;
+  if (!pesan) {
+    return res.status(400).json({ error: "Pesan tidak boleh kosong" });
+  }
+
+  const userMessage = pesan.trim().toLowerCase();
+
+  try {
+    // 1. CEK INTENT BERITA TERLEBIH DAHULU
+    if (isNewsIntent(userMessage)) {
+      console.log(`[News] Mendeteksi pencarian berita: "${userMessage}"`);
+      const beritaTerbaru = await dapatkanBeritaGemini(userMessage);
+      
+      if (beritaTerbaru) {
+        return res.json({ jawaban: beritaTerbaru });
+      }
+    }
+
+    // 2. CEK DATABASE LOCAL (data.json seeder)
+    const queryDb = "SELECT jawaban, link FROM chatbot_memory WHERE pertanyaan LIKE ?";
+    const [rows] = await db.execute(queryDb, [`%${userMessage}%`]);
+
+    if (rows.length > 0) {
+      const dataMatch = rows[0];
+      let responsFinal = dataMatch.jawaban;
+      if (dataMatch.link) {
+        responsFinal += `\n\nUntuk informasi lebih lanjut, kunjungi: ${dataMatch.link}`;
+      }
+      return res.json({ jawaban: responsFinal });
+    }
+
+    // 3. FALLBACK KE GEMINI STANDAR (JIKA TIDAK ADA DI DB & BUKAN BERITA)
+    console.log(`[Fallback] Menghubungi Gemini untuk: "${userMessage}"`);
+    const jawabanAI = await tanyaGemini(userMessage);
+    return res.json({ jawaban: jawabanAI });
+
+  } catch (error) {
+    console.error("Error pada endpoint /chat:", error);
+    return res.status(500).json({ error: "Terjadi kesalahan internal server." });
+  }
+});
 
 /* =====================================================
    STARTUP & LISTEN
 ===================================================== */
 const PORT = process.env.PORT || 3000;
 
-// HANYA JALANKAN APP.LISTEN JIKA DI LOKAL (BUKAN DI VERCEL)
 if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => {
     console.log("=================================");
-    console.log(`Server berjalan di port: ${PORT}`);
+    console.log(`Server lokal berjalan di port: ${PORT}`);
     console.log("=================================");
   });
 }
 
-// WAJIB BAGI VERCEL: Ekspor aplikasi Express Anda
+// Ekspor default aplikasi Express untuk dibaca oleh vercel.json
 export default app;
