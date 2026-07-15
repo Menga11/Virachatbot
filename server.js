@@ -15,6 +15,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(process.cwd(), "publik")));
 
+// RUTE UTAMA: Mengarahkan halaman awal ke publik/pages/index.html
+app.get("/", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "publik", "pages", "index.html"));
+});
+
 /* =====================================================
    DATABASE SEEDER FROM JSON
 ===================================================== */
