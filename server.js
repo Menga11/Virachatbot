@@ -239,20 +239,7 @@ async function searchAllNews(keyword) {
     return berita;
 }
 
-  for (const site of sites) {
-    console.log(`🔍 Mencari berita di ${site}...`);
-    const berita = await searchGoogleNews(keyword, site);
-
-    if (berita && berita.length > 0) {
-      console.log(`✅ Berita ditemukan di ${site}`);
-      return berita;
-    }
-    console.log(`❌ Tidak ada berita di ${site}`);
-  }
-
-  console.log("❌ Tidak ditemukan di semua situs");
-  return [];
-
+ 
 
 /* =====================================================
    INTENT MATCHING (DINAMIS & AKURAT)
@@ -260,27 +247,19 @@ async function searchAllNews(keyword) {
 function isNewsIntent(userMessage) {
   const newsKeywords = [
     "berita", "kasus", "narkoba", "sabu", "ganja", "ekstasi",
-    "pelecehan", "pencurian", "maling", "curat", "curas", 
+    "pelecehan", "pencurian", "maling", "curat", "curas",
     "curanmor", "begal", "perampokan", "pembunuhan", "korupsi", "kriminal"
   ];
+
   return newsKeywords.some(keyword => userMessage.includes(keyword));
 }
 
 function getNewsKeyword(userMessage) {
-
-    return userMessage
-        .replace(/\b(berita|kasus|hari ini|tentang|di|polisi|polda|sumut)\b/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-
+  return userMessage
+    .replace(/\b(berita|kasus|hari ini|tentang|di|polisi|polda|sumut)\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
-
-  if (!keyword) {
-    keyword = "kriminal";
-  }
-
-  return `${keyword} polda sumut`;
-
 
 function formatNewsResults(results) {
   if (!results || results.length === 0) {
@@ -288,6 +267,7 @@ function formatNewsResults(results) {
   }
 
   let reply = "📰 Berikut berita yang ditemukan:\n\n";
+
   results.forEach((item, index) => {
     reply += `${index + 1}. ${item.title}\n`;
     reply += `Sumber: ${item.source}\n`;
