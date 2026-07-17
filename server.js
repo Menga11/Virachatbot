@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
 import fetch from "node-fetch";
-import db from "./db.js";
+import { getDB } from "./db.js";
 
 dotenv.config();
 
@@ -23,32 +23,25 @@ app.get("/", (req, res) => {
 /* =====================================================
    DATABASE SEEDER & SCHEMA FIXER
 ===================================================== */
+/*
 async function setupDatabase() {
   try {
-    // 1. Hapus paksa tabel lama (jangan pakai IF EXISTS agar bersih total)
-    await db.query("DROP TABLE chatbot_memory;").catch(() => {}); 
-    
-    // 2. Buat tabel baru dengan kolom yang benar
     await db.query(`
-      CREATE TABLE chatbot_memory (
+      CREATE TABLE IF NOT EXISTS chatbot_memory (
         id INT AUTO_INCREMENT PRIMARY KEY,
         pertanyaan TEXT,
         jawaban TEXT,
         link VARCHAR(255) NULL
       );
     `);
-    
-    console.log("✅ Tabel baru berhasil dibuat dengan kolom 'link'.");
-
-    // 3. Lanjutkan dengan importDataJSON()...
+    console.log("✅ Tabel siap digunakan (chatbot_memory).");
   } catch (error) {
-    console.error("❌ Gagal setup:", error);
+    console.error("❌ Gagal setup database:", error.message);
   }
 }
+// Hapus juga pemanggilan fungsi ini jika ada di bagian atas atau bawah kode
+*/
 
-
-// Jalankan saat startup
-setupDatabase();
 /* =====================================================
    INTENT & NEWS DETECTOR
 ===================================================== */
@@ -144,14 +137,11 @@ async function tanyaGemini(userMessage) {
 ===================================================== */
 app.post("/chat", async (req, res) => {
   const inputPesan = req.body.pesan || req.body.message || req.body.text;
-
-  if (!inputPesan) {
-    return res.status(400).json({ error: "Pesan tidak boleh kosong" });
-  }
+  if (!inputPesan) return res.status(400).json({ error: "Pesan kosong" });
 
   const userMessage = inputPesan.trim().toLowerCase();
-
-  // ⚡ PROTEKSI 1: Fitur Balasan Cepat Kata Sapaan (Bypass Instan)
+  
+  // Bypass Salam
   const salamLokal = ["halo", "hi", "p", "siang", "pagi", "sore", "malam", "test", "tes", "assalamualaikum", "halo vira"];
   if (salamLokal.includes(userMessage)) {
     const sapaanRes = "Halo! Saya VIRA, asisten virtual Humas Polda Sumut. Ada yang bisa saya bantu hari ini?";
@@ -159,62 +149,38 @@ app.post("/chat", async (req, res) => {
   }
 
   try {
-    // 1. CEK INTENT BERITA TERLEBIH DAHULU
+    // 1. Cek Berita
     if (isNewsIntent(userMessage)) {
-      console.log(`[News] Mendeteksi pencarian berita: "${userMessage}"`);
-      const beritaTerbaru = await dapatkanBeritaGemini(userMessage);
-      
-      if (beritaTerbaru) {
-        return res.json({ jawaban: beritaTerbaru, reply: beritaTerbaru });
-      } else {
-        // Fallback Teks Berita Lokal jika API Key Kosong/Gagal Grounding
-        const beritaFallback = `Mengenai informasi "${inputPesan}", Anda dapat memantau rilis kasus resmi serta pembaruan kamtibmas terkini secara langsung melalui portal berita resmi Humas Polda Sumut di https://tribratanews.sumut.polri.go.id/`;
-        return res.json({ jawaban: beritaFallback, reply: beritaFallback });
-      }
+      const berita = await dapatkanBeritaGemini(userMessage);
+      if (berita) return res.json({ jawaban: berita, reply: berita });
     }
 
-    // 2. CEK DATABASE (Aiven MySQL)
+    // 2. Cek Database
     try {
-      if (db) {
-        const queryDb = "SELECT jawaban, link FROM chatbot_memory WHERE pertanyaan LIKE ?";
-        const [rows] = await db.query(queryDb, [`%${userMessage}%`]);
-
-        if (rows && rows.length > 0) {
-          const dataMatch = rows[0];
-          let responsFinal = dataMatch.jawaban;
-          if (dataMatch.link) {
-            responsFinal += `\n\nUntuk informasi lebih lanjut, kunjungi: ${dataMatch.link}`;
-          }
-          return res.json({ jawaban: responsFinal, reply: responsFinal });
-        }
+      const db = getDB();
+      const [rows] = await db.query("SELECT jawaban, link FROM chatbot_memory WHERE pertanyaan LIKE ?", [`%${userMessage}%`]);
+      if (rows && rows.length > 0) {
+        let responsFinal = rows[0].jawaban;
+        if (rows[0].link) responsFinal += `\n\nUntuk informasi lebih lanjut, kunjungi: ${rows[0].link}`;
+        return res.json({ jawaban: responsFinal, reply: responsFinal });
       }
     } catch (dbError) {
-      console.error("Database error bypass:", dbError.message);
+      console.error("DB Error:", dbError.message);
     }
 
-    // 3. FALLBACK KE GEMINI STANDAR
-    console.log(`[Fallback] Menghubungi Gemini untuk: "${userMessage}"`);
+    // 3. Fallback AI
     const jawabanAI = await tanyaGemini(userMessage);
     return res.json({ jawaban: jawabanAI, reply: jawabanAI });
 
   } catch (error) {
-    console.error("ERROR TOTAL PADA UTAMA CHAT:", error); 
-    const fallbackPesan = "Halo! Mohon maaf, sistem VIRA sedang disesuaikan. Silakan ulangi pertanyaan Anda beberapa saat lagi.";
-    res.json({ jawaban: fallbackPesan, reply: fallbackPesan });
+    res.json({ jawaban: "Sistem sedang sibuk, silakan coba lagi.", reply: "Sistem sedang sibuk, silakan coba lagi." });
   }
 });
 
-/* =====================================================
-   STARTUP & LISTEN
-===================================================== */
-const PORT = process.env.PORT || 3000;
-
+// Start Lokal (hanya jalan jika bukan di Vercel)
 if (process.env.NODE_ENV !== "production") {
-  app.listen(PORT, () => {
-    console.log("=================================");
-    console.log(`Server lokal berjalan di port: ${PORT}`);
-    console.log("=================================");
-  });
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }
 
 export default app;
