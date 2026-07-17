@@ -25,8 +25,8 @@ app.get("/", (req, res) => {
 ===================================================== */
 // Tambahkan fungsi ini untuk memastikan tabel dan data ada
 async function initializeDatabase() {
+    const db = await getDB(); // Pastikan ambil instance db-nya
     try {
-        // 1. Buat tabel jika belum ada
         await db.query(`
             CREATE TABLE IF NOT EXISTS chatbot_memory (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -36,10 +36,8 @@ async function initializeDatabase() {
             );
         `);
 
-        // 2. Cek apakah tabel kosong
         const [rows] = await db.query("SELECT COUNT(*) as count FROM chatbot_memory");
         
-        // 3. Jika kosong, masukkan data contoh
         if (rows[0].count === 0) {
             await db.query(`
                 INSERT INTO chatbot_memory (pertanyaan, jawaban, link) 
@@ -51,9 +49,7 @@ async function initializeDatabase() {
         console.error("❌ Gagal inisialisasi database:", error.message);
     }
 }
-
-// Panggil fungsi ini saat aplikasi berjalan
-initializeDatabase();
+initializeDatabase()
 /* =====================================================
    INTENT & NEWS DETECTOR
 ===================================================== */
@@ -148,45 +144,28 @@ async function tanyaGemini(userMessage) {
    ROUTE: UTAMA (CHAT HANDLER)
 ===================================================== */
 app.post("/chat", async (req, res) => {
-  const inputPesan = req.body.pesan || req.body.message || req.body.text;
-  if (!inputPesan) return res.status(400).json({ error: "Pesan kosong" });
+    const userQuery = req.body.message;
+    const db = await getDB(); // Pastikan ambil instance db-nya
 
-  const userMessage = inputPesan.trim().toLowerCase();
-  
-  // Bypass Salam
-  const salamLokal = ["halo", "hi", "p", "siang", "pagi", "sore", "malam", "test", "tes", "assalamualaikum", "halo vira"];
-  if (salamLokal.includes(userMessage)) {
-    const sapaanRes = "Halo! Saya VIRA, asisten virtual Humas Polda Sumut. Ada yang bisa saya bantu hari ini?";
-    return res.json({ jawaban: sapaanRes, reply: sapaanRes });
-  }
+    // 1. Cek database dulu
+    const [rows] = await db.query(
+        "SELECT * FROM chatbot_memory WHERE pertanyaan LIKE ?", 
+        [`%${userQuery}%`]
+    );
 
-  try {
-    // 1. Cek Berita
-    if (isNewsIntent(userMessage)) {
-      const berita = await dapatkanBeritaGemini(userMessage);
-      if (berita) return res.json({ jawaban: berita, reply: berita });
+    if (rows.length > 0) {
+        res.json({ reply: rows[0].jawaban });
+    } 
+    // 2. Jika tidak ada di database, cek apakah itu pertanyaan berita (gunakan AI)
+    else if (isNewsIntent(userQuery)) {
+        const berita = await dapatkanBeritaGemini(userQuery);
+        res.json({ reply: berita || "Maaf, saya tidak menemukan berita terbaru terkait hal tersebut." });
+    } 
+    // 3. Jika bukan berita, gunakan chat biasa (fallback)
+    else {
+        const jawabanAI = await tanyaGemini(userQuery);
+        res.json({ reply: jawabanAI });
     }
-
-    // 2. Cek Database
-    try {
-      const db = getDB();
-      const [rows] = await db.query("SELECT jawaban, link FROM chatbot_memory WHERE pertanyaan LIKE ?", [`%${userMessage}%`]);
-      if (rows && rows.length > 0) {
-        let responsFinal = rows[0].jawaban;
-        if (rows[0].link) responsFinal += `\n\nUntuk informasi lebih lanjut, kunjungi: ${rows[0].link}`;
-        return res.json({ jawaban: responsFinal, reply: responsFinal });
-      }
-    } catch (dbError) {
-      console.error("DB Error:", dbError.message);
-    }
-
-    // 3. Fallback AI
-    const jawabanAI = await tanyaGemini(userMessage);
-    return res.json({ jawaban: jawabanAI, reply: jawabanAI });
-
-  } catch (error) {
-    res.json({ jawaban: "Sistem sedang sibuk, silakan coba lagi.", reply: "Sistem sedang sibuk, silakan coba lagi." });
-  }
 });
 
 // Start Lokal (hanya jalan jika bukan di Vercel)
