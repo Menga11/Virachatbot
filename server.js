@@ -1,15 +1,17 @@
 import express from "express";
 import { getDB } from "./db.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import cors from "cors"; // Penting ditambahkan untuk keamanan akses
 
 const app = express();
 app.use(express.json());
+app.use(cors()); // Mengizinkan akses dari aplikasi frontend Anda
 
-// Inisialisasi AI dengan instruksi yang ketat
+// Inisialisasi AI
 const ai = new GoogleGenerativeAI(process.env.API_KEY).getGenerativeModel({ 
   model: "gemini-1.5-flash",
   systemInstruction: `Anda adalah VIRA, asisten virtual Humas Polda Sumut.
-  TUGAS: Menjawab pertanyaan terkait kasus kriminal atau berita.
+  TUGAS: Menjawab pertanyaan terkait kasus kriminal atau berita di wilayah Sumut.
   ATURAN LINK: 
   1. HANYA boleh memberikan link berikut: 
      - https://humas.polri.go.id/
@@ -20,11 +22,16 @@ const ai = new GoogleGenerativeAI(process.env.API_KEY).getGenerativeModel({
   4. Jika tidak ada informasi spesifik, arahkan user ke salah satu link tersebut.`
 });
 
+// Endpoint untuk mencegah error "Cannot GET /"
+app.get("/", (req, res) => {
+  res.send("VIRA Humas Polda Sumut Online.");
+});
+
 app.post("/chat", async (req, res) => {
   const query = req.body.message || "";
   
   try {
-    // 1. Cek database dulu (Prioritas jawaban akurat dari admin)
+    // 1. Cek database
     const [rows] = await getDB().query(
       "SELECT jawaban FROM chatbot_memory WHERE ? LIKE CONCAT('%', pertanyaan, '%')", 
       [query.toLowerCase()]
@@ -34,7 +41,7 @@ app.post("/chat", async (req, res) => {
       return res.json({ reply: rows[0].jawaban });
     }
 
-    // 2. Jika tidak ada di DB, gunakan AI dengan instruksi ketat tadi
+    // 2. Jika tidak ada di DB, gunakan AI
     const result = await ai.generateContent(query);
     res.json({ reply: result.response.text() });
 
@@ -44,4 +51,5 @@ app.post("/chat", async (req, res) => {
   }
 });
 
+// Vercel tidak memerlukan app.listen, tapi tidak apa-apa ditinggalkan
 app.listen(3000, () => console.log("Server running"));
