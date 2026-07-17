@@ -3,7 +3,7 @@ import path from "path";
 import dotenv from "dotenv";
 import fs from "fs";
 import fetch from "node-fetch";
-import db from "./db.js";
+import { getDB as db } from "./db.js";
 import levenshtein from "fast-levenshtein";
 
 dotenv.config();
