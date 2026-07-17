@@ -85,27 +85,23 @@ app.post("/chat", async (req, res) => {
     const userQuery = req.body.message || "";
     const lowerQuery = userQuery.toLowerCase();
 
-    // 1. Sapaan Dasar
-    if (["halo", "halooo", "hai", "pagi", "siang"].some(s => lowerQuery.includes(s))) {
-        return res.json({ reply: "Halo! Saya VIRA, Asisten Virtual Humas Polda Sumut. Ada yang bisa saya bantu hari ini?" });
+    // 1. Sapaan
+    if (["halo", "halooo", "hai"].some(s => lowerQuery.includes(s))) {
+        return res.json({ reply: "Halo! Saya VIRA, Asisten Virtual Humas Polda Sumut. Ada yang bisa saya bantu?" });
     }
 
-    // 2. Cek Database
+    // 2. Cek Database (Pencarian fleksibel)
     const db = await getDB();
-    const [rows] = await db.query("SELECT * FROM chatbot_memory WHERE pertanyaan LIKE ?", [`%${userQuery}%`]);
+    const [rows] = await db.query("SELECT * FROM chatbot_memory WHERE ? LIKE CONCAT('%', pertanyaan, '%')", [userQuery]);
 
     if (rows.length > 0) {
         return res.json({ reply: rows[0].jawaban });
     }
 
-    // 3. Jika bukan sapaan & tidak ada di DB, cek Intent Berita atau AI
-    if (isNewsIntent(userQuery)) {
-        const berita = await dapatkanBeritaGemini(userQuery);
-        return res.json({ reply: berita || "Maaf, saya tidak menemukan berita terkait saat ini." });
-    } else {
-        const jawabanAI = await tanyaGemini(userQuery);
-        return res.json({ reply: jawabanAI });
-    }
+    // 3. JIKA TIDAK ADA DI DATABASE, JANGAN LANGSUNG MENYERAH!
+    // Gunakan Gemini untuk menjawab berdasarkan konteks Polda Sumut
+    const jawabanAI = await tanyaGemini(userQuery);
+    return res.json({ reply: jawabanAI });
 });
 
 app.get("/", (req, res) => res.sendFile(path.join(process.cwd(), "publik/pages/index.html")));
