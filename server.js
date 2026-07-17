@@ -23,25 +23,37 @@ app.get("/", (req, res) => {
 /* =====================================================
    DATABASE SEEDER & SCHEMA FIXER
 ===================================================== */
-/*
-async function setupDatabase() {
-  try {
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS chatbot_memory (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        pertanyaan TEXT,
-        jawaban TEXT,
-        link VARCHAR(255) NULL
-      );
-    `);
-    console.log("✅ Tabel siap digunakan (chatbot_memory).");
-  } catch (error) {
-    console.error("❌ Gagal setup database:", error.message);
-  }
-}
-// Hapus juga pemanggilan fungsi ini jika ada di bagian atas atau bawah kode
-*/
+// Tambahkan fungsi ini untuk memastikan tabel dan data ada
+async function initializeDatabase() {
+    try {
+        // 1. Buat tabel jika belum ada
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS chatbot_memory (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                pertanyaan TEXT,
+                jawaban TEXT,
+                link VARCHAR(255) NULL
+            );
+        `);
 
+        // 2. Cek apakah tabel kosong
+        const [rows] = await db.query("SELECT COUNT(*) as count FROM chatbot_memory");
+        
+        // 3. Jika kosong, masukkan data contoh
+        if (rows[0].count === 0) {
+            await db.query(`
+                INSERT INTO chatbot_memory (pertanyaan, jawaban, link) 
+                VALUES ('kasus narkoba', 'Untuk informasi kasus narkoba di wilayah hukum Polda Sumut, silakan hubungi layanan hotline 110 atau kunjungi website resmi kami.', 'https://sumut.polri.go.id');
+            `);
+            console.log("✅ Tabel dan data contoh berhasil disiapkan.");
+        }
+    } catch (error) {
+        console.error("❌ Gagal inisialisasi database:", error.message);
+    }
+}
+
+// Panggil fungsi ini saat aplikasi berjalan
+initializeDatabase();
 /* =====================================================
    INTENT & NEWS DETECTOR
 ===================================================== */
