@@ -1,37 +1,33 @@
 import express from "express";
 import { getDB } from "./db.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import cors from "cors"; // Penting ditambahkan untuk keamanan akses
+import path from "path";
+import { fileURLToPath } from "url";
+import cors from "cors";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-app.use(express.json());
-app.use(cors()); // Mengizinkan akses dari aplikasi frontend Anda
 
-// Inisialisasi AI
+app.use(cors());
+app.use(express.json());
+app.use(express.static(__dirname)); // Agar index.html bisa diakses
+
 const ai = new GoogleGenerativeAI(process.env.API_KEY).getGenerativeModel({ 
   model: "gemini-1.5-flash",
-  systemInstruction: `Anda adalah VIRA, asisten virtual Humas Polda Sumut.
-  TUGAS: Menjawab pertanyaan terkait kasus kriminal atau berita di wilayah Sumut.
-  ATURAN LINK: 
-  1. HANYA boleh memberikan link berikut: 
-     - https://humas.polri.go.id/
-     - https://tribratanews.polri.go.id/
-     - https://www.detik.com/
-  2. DILARANG membuat atau menebak URL berita yang spesifik (misal: .../kasus-pembunuhan-x). 
-  3. Gunakan link di atas sesuai kategori berita yang paling relevan.
-  4. Jika tidak ada informasi spesifik, arahkan user ke salah satu link tersebut.`
+  systemInstruction: `Anda adalah VIRA, asisten virtual Humas Polda Sumut. 
+  HANYA boleh memberikan link: humas.polri.go.id, tribratanews.polri.go.id, detik.com. 
+  Jangan mengarang link lain.`
 });
 
-// Endpoint untuk mencegah error "Cannot GET /"
+// Route utama untuk menampilkan website
 app.get("/", (req, res) => {
-  res.send("VIRA Humas Polda Sumut Online.");
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
+// Route untuk chat
 app.post("/chat", async (req, res) => {
   const query = req.body.message || "";
-  
   try {
-    // 1. Cek database
     const [rows] = await getDB().query(
       "SELECT jawaban FROM chatbot_memory WHERE ? LIKE CONCAT('%', pertanyaan, '%')", 
       [query.toLowerCase()]
@@ -41,15 +37,11 @@ app.post("/chat", async (req, res) => {
       return res.json({ reply: rows[0].jawaban });
     }
 
-    // 2. Jika tidak ada di DB, gunakan AI
     const result = await ai.generateContent(query);
     res.json({ reply: result.response.text() });
-
   } catch (err) {
-    console.error("Error:", err);
-    res.json({ reply: "Mohon maaf, silakan kunjungi https://humas.polri.go.id/ untuk informasi resmi." });
+    res.json({ reply: "Silakan kunjungi https://humas.polri.go.id/ untuk info resmi." });
   }
 });
 
-// Vercel tidak memerlukan app.listen, tapi tidak apa-apa ditinggalkan
-app.listen(3000, () => console.log("Server running"));
+app.listen(3000, () => console.log("Server running on port 3000"));
