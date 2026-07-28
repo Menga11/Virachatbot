@@ -3,12 +3,16 @@ import path from "path";
 import dotenv from "dotenv";
 import fs from "fs";
 import fetch from "node-fetch";
-import { getDB as db } from "./db.js";
+import { getDB, testConnection } from "./db.js";
 import levenshtein from "fast-levenshtein";
 
 dotenv.config();
 
 const app = express();
+
+const db = getDB();
+
+testConnection();
 
 console.log("Express berhasil jalan");
 
@@ -383,7 +387,7 @@ function isGreeting(userMessage) {
 }
 
 function isNewsIntent(userMessage) {
-  const newsKeywords = ["berita", "narkoba", "penangkapan", "kasus", "begal", "curat", "curas", "sabu", "ganja", "curanmor", "pelecehan", "seksual", "judi", "pencurian", "maling"];
+  const newsKeywords = ["berita", "narkoba", "penangkapan", "pembunuhan", "kasus", "begal", "curat", "curas", "sabu", "ganja", "curanmor", "pelecehan", "seksual", "judi", "pencurian", "maling"];
   return newsKeywords.some(keyword => userMessage.includes(keyword));
 }
 
@@ -391,6 +395,7 @@ function getNewsKeyword(userMessage) {
   if (userMessage.includes("pelecehan") || userMessage.includes("seksual") || userMessage.includes("cabul")) return "pelecehan";
   if (userMessage.includes("narkoba") || userMessage.includes("sabu") || userMessage.includes("ganja")) return "narkoba";
   if (userMessage.includes("penangkapan") || userMessage.includes("tangkap")) return "tangkap";
+  if (userMessage.includes("pembunuhan") || userMessage.includes("bunuh")) return "pembunuhan";
   if (userMessage.includes("judi") || userMessage.includes("judol")) return "judi";
   if (userMessage.includes("curanmor") || userMessage.includes("motor")) return "curanmor";
   if (userMessage.includes("begal") || userMessage.includes("geng motor")) return "begal";
@@ -429,12 +434,16 @@ app.post("/chat", async (req, res) => {
         }
         return res.json({
           reply: `Maaf, berita terkait "${keyword}" belum ditemukan di TBNews Sumut, Humas Polri, maupun detikNews.`
-        });
+            });
+        }
       }
-    }
 
     /* ================= DATABASE SEARCH ================= */
-    const [allRows] = await db.execute("SELECT * FROM chatbot_memory");
+    console.log("Mengambil data chatbot_memory...");
+
+const [allRows] = await db.execute("SELECT * FROM chatbot_memory");
+
+console.log("Jumlah data:", allRows.length);
     let bestMatch = null;
     let highestScore = 0;
     const userWords = userMessage.split(" ");
@@ -484,9 +493,14 @@ app.post("/chat", async (req, res) => {
     return res.json({ reply });
 
   } catch (error) {
-    console.log("CHAT ERROR:", error);
-    return res.status(500).json({ reply: "Terjadi kesalahan pada server" });
-  }
+  console.error("===== CHAT ERROR =====");
+  console.error(error);
+  console.error(error.stack);
+
+  return res.status(500).json({
+    reply: "Terjadi kesalahan pada server"
+  });
+}
 });
 
 /* =====================================================
