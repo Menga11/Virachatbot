@@ -12,7 +12,7 @@ const app = express();
 
 const db = getDB();
 
-testConnection();
+testConnection().catch(console.error);
 
 console.log("Express berhasil jalan");
 
@@ -455,12 +455,24 @@ app.post("/chat", async (req, res) => {
         }
       }
 
-    /* ================= DATABASE SEARCH ================= */
-    console.log("Mengambil data chatbot_memory...");
+/* ================= DATABASE SEARCH ================= */
+console.log("Mengambil data chatbot_memory...");
 
-const [allRows] = await db.execute("SELECT * FROM chatbot_memory");
+let allRows = [];
 
-console.log("Jumlah data:", allRows.length);
+try {
+  const [rows] = await db.execute("SELECT * FROM chatbot_memory");
+  allRows = rows;
+
+  console.log("Jumlah data:", allRows.length);
+
+} catch (err) {
+  console.error("===== DATABASE ERROR =====");
+  console.error(err);
+  console.error("Message:", err.message);
+  console.error("Code:", err.code);
+  throw err;
+}
 
 let bestMatch = null;
 let highestScore = 0;
@@ -548,13 +560,16 @@ if (
   } catch (error) {
   console.error("===== CHAT ERROR =====");
   console.error(error);
+  console.error(error.message);
+  console.error(error.code);
   console.error(error.stack);
 
   return res.status(500).json({
     reply: "Terjadi kesalahan pada server"
   });
 }
-});
+
+});   // <-- INI YANG HILANG
 
 /* =====================================================
    DATABASE SEEDER FROM JSON (SAFE FOR VERCEL PATH)
