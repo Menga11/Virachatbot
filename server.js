@@ -182,17 +182,26 @@ app.get("/kontak", (req, res) => {
 ===================================================== */
 async function findBestMatch(userMessage) {
   const [rows] = await db.execute("SELECT * FROM chatbot_memory");
-  const userWords = userMessage.split(" ");
+
+  const userWords = String(userMessage || "")
+    .toLowerCase()
+    .split(/\s+/);
 
   let bestMatch = null;
   let smallestDistance = 999;
 
   for (const row of rows) {
-    const dbWords = row.pertanyaan.toLowerCase().split(" ");
+
+    const pertanyaan = String(row.pertanyaan || "").toLowerCase();
+
+    if (!pertanyaan) continue;
+
+    const dbWords = pertanyaan.split(/\s+/);
 
     for (const word of userWords) {
       for (const dbWord of dbWords) {
         const distance = levenshtein.get(word, dbWord);
+
         if (distance < smallestDistance) {
           smallestDistance = distance;
           bestMatch = row;
@@ -201,9 +210,13 @@ async function findBestMatch(userMessage) {
     }
   }
 
-  if (smallestDistance <= 2) {
-    return { match: bestMatch, distance: smallestDistance };
+  if (bestMatch && smallestDistance <= 2) {
+    return {
+      match: bestMatch,
+      distance: smallestDistance
+    };
   }
+
   return null;
 }
 
