@@ -137,16 +137,20 @@ function scoreNews(title, keyword) {
   return score;
 }
 
-function naturalResponse(jawaban) {
+function naturalResponse(jawaban = "") {
+  jawaban = String(jawaban || "");
+
   if (jawaban.toLowerCase().includes("ada yang bisa saya bantu")) {
     return jawaban;
   }
+
   const templates = [
     `Baik, berikut informasinya:\n${jawaban}`,
     `Berikut informasi yang dapat kami sampaikan:\n${jawaban}`,
     `Informasi yang Anda butuhkan:\n${jawaban}`,
-    `${jawaban}`
+    jawaban
   ];
+
   return templates[Math.floor(Math.random() * templates.length)];
 }
 
@@ -444,37 +448,73 @@ app.post("/chat", async (req, res) => {
 const [allRows] = await db.execute("SELECT * FROM chatbot_memory");
 
 console.log("Jumlah data:", allRows.length);
-    let bestMatch = null;
-    let highestScore = 0;
-    const userWords = userMessage.split(" ");
 
-    for (const row of allRows) {
-      const dbQuestion = row.pertanyaan.toLowerCase();
-      let score = 0;
+let bestMatch = null;
+let highestScore = 0;
 
-      for (const word of userWords) {
-        if (dbQuestion.split(" ").includes(word)) score++;
-      }
-      if (userMessage.includes(dbQuestion)) score += 2;
+const userWords = userMessage.split(/\s+/);
 
-      if (score > highestScore) {
-        highestScore = score;
-        bestMatch = row;
-      }
+for (const row of allRows) {
+
+  const dbQuestion = String(row.pertanyaan || "").toLowerCase();
+
+  if (!dbQuestion) continue;
+
+  let score = 0;
+
+  const dbWords = dbQuestion.split(/\s+/);
+
+  for (const word of userWords) {
+    if (dbWords.includes(word)) {
+      score++;
     }
+  }
 
-    if (bestMatch && highestScore > 4) {
-      let finalReply = naturalResponse(bestMatch.jawaban);
-      if (bestMatch.link) finalReply += `\n\nDokumen terkait:\n${bestMatch.link}`;
-      return res.json({ reply: finalReply });
-    }
+  if (userMessage.includes(dbQuestion)) {
+    score += 5;
+  }
 
-    const typoResult = await findBestMatch(userMessage);
-    if (typoResult && userWords.length === 1 && typoResult.distance <= 1) {
-      let finalReply = naturalResponse(typoResult.match.jawaban);
-      if (typoResult.match.link) finalReply += `\n\nDokumen terkait:\n${typoResult.match.link}`;
-      return res.json({ reply: finalReply });
-    }
+  if (score > highestScore) {
+    highestScore = score;
+    bestMatch = row;
+  }
+}
+
+console.log("Best Match:", bestMatch);
+console.log("Highest Score:", highestScore);
+
+if (bestMatch && highestScore >= 2) {
+
+  let finalReply = naturalResponse(bestMatch.jawaban);
+
+  if (bestMatch.link) {
+    finalReply += `\n\nDokumen terkait:\n${bestMatch.link}`;
+  }
+
+  return res.json({
+    reply: finalReply
+  });
+}
+
+const typoResult = await findBestMatch(userMessage);
+
+if (
+  typoResult &&
+  typoResult.match &&
+  userWords.length === 1 &&
+  typoResult.distance <= 1
+) {
+
+  let finalReply = naturalResponse(typoResult.match.jawaban);
+
+  if (typoResult.match.link) {
+    finalReply += `\n\nDokumen terkait:\n${typoResult.match.link}`;
+  }
+
+  return res.json({
+    reply: finalReply
+  });
+}
 
     /* ================= GEMINI FALLBACK ================= */
     const body = {
