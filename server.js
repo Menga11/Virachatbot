@@ -11,6 +11,7 @@ dotenv.config();
 const app = express();
 
 const db = getDB();
+console.log(db);
 
 testConnection().catch(console.error);
 
