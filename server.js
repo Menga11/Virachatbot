@@ -422,7 +422,7 @@ function getNewsKeyword(userMessage) {
 }
 
 /* =====================================================
-   CHATBOT MAIN ENDPOINT
+   CHATBOT MAIN ENDPOINT (DIPERBAIKI)
 ===================================================== */
 app.post("/chat", async (req, res) => {
   try {
@@ -440,7 +440,86 @@ app.post("/chat", async (req, res) => {
       return res.json({ reply: "Halo, saya VIRA 👋\nAda yang bisa saya bantu?" });
     }
 
-    // Eksekusi Logika Berita Multi-Source Berjenjang
+    /* ================= 1. DATABASE SEARCH (PRIORITAS UTAMA DARI data.json) ================= */
+    console.log("Mengambil data chatbot_memory...");
+
+    let allRows = [];
+
+    try {
+      const [rows] = await db.execute("SELECT * FROM chatbot_memory");
+      allRows = rows;
+      console.log("Jumlah data:", allRows.length);
+    } catch (err) {
+      console.error("===== DATABASE ERROR =====");
+      console.error(err);
+      console.error("Message:", err.message);
+      console.error("Code:", err.code);
+    }
+
+    let bestMatch = null;
+    let highestScore = 0;
+    const userWords = userMessage.split(/\s+/);
+
+    for (const row of allRows) {
+      const dbQuestion = String(row.pertanyaan || "").toLowerCase();
+
+      if (!dbQuestion) continue;
+
+      let score = 0;
+      const dbWords = dbQuestion.split(/\s+/);
+
+      for (const word of userWords) {
+        if (dbWords.includes(word)) {
+          score++;
+        }
+      }
+
+      if (userMessage.includes(dbQuestion) || dbQuestion.includes(userMessage)) {
+        score += 5;
+      }
+
+      if (score > highestScore) {
+        highestScore = score;
+        bestMatch = row;
+      }
+    }
+
+    console.log("Best Match:", bestMatch);
+    console.log("Highest Score:", highestScore);
+
+    // Amabang batas skor diturunkan jadi >= 1 agar pertanyaan singkat lebih mudah tembus
+    if (bestMatch && highestScore >= 1) {
+      let finalReply = naturalResponse(bestMatch.jawaban);
+
+      if (bestMatch.link) {
+        finalReply += `\n\nDokumen terkait:\n${bestMatch.link}`;
+      }
+
+      return res.json({
+        reply: finalReply
+      });
+    }
+
+    // Cek Typo Levenshtein
+    const typoResult = await findBestMatch(userMessage);
+
+    if (
+      typoResult &&
+      typoResult.match &&
+      typoResult.distance <= 2
+    ) {
+      let finalReply = naturalResponse(typoResult.match.jawaban);
+
+      if (typoResult.match.link) {
+        finalReply += `\n\nDokumen terkait:\n${typoResult.match.link}`;
+      }
+
+      return res.json({
+        reply: finalReply
+      });
+    }
+
+    /* ================= 2. NEWS INTENT (ALTERNATIF KEDUA) ================= */
     if (isNewsIntent(userMessage)) {
       const keyword = getNewsKeyword(userMessage);
       if (keyword) {
@@ -450,99 +529,10 @@ app.post("/chat", async (req, res) => {
         if (formatted) {
           return res.json({ reply: formatted });
         }
-        return res.json({
-          reply: `Maaf, berita terkait "${keyword}" belum ditemukan di TBNews Sumut, Humas Polri, maupun detikNews.`
-            });
-        }
       }
-
-/* ================= DATABASE SEARCH ================= */
-console.log("Mengambil data chatbot_memory...");
-
-let allRows = [];
-
-try {
-  const [rows] = await db.execute("SELECT * FROM chatbot_memory");
-  allRows = rows;
-
-  console.log("Jumlah data:", allRows.length);
-
-} catch (err) {
-  console.error("===== DATABASE ERROR =====");
-  console.error(err);
-  console.error("Message:", err.message);
-  console.error("Code:", err.code);
-  throw err;
-}
-
-let bestMatch = null;
-let highestScore = 0;
-
-const userWords = userMessage.split(/\s+/);
-
-for (const row of allRows) {
-
-  const dbQuestion = String(row.pertanyaan || "").toLowerCase();
-
-  if (!dbQuestion) continue;
-
-  let score = 0;
-
-  const dbWords = dbQuestion.split(/\s+/);
-
-  for (const word of userWords) {
-    if (dbWords.includes(word)) {
-      score++;
     }
-  }
 
-  if (userMessage.includes(dbQuestion)) {
-    score += 5;
-  }
-
-  if (score > highestScore) {
-    highestScore = score;
-    bestMatch = row;
-  }
-}
-
-console.log("Best Match:", bestMatch);
-console.log("Highest Score:", highestScore);
-
-if (bestMatch && highestScore >= 2) {
-
-  let finalReply = naturalResponse(bestMatch.jawaban);
-
-  if (bestMatch.link) {
-    finalReply += `\n\nDokumen terkait:\n${bestMatch.link}`;
-  }
-
-  return res.json({
-    reply: finalReply
-  });
-}
-
-const typoResult = await findBestMatch(userMessage);
-
-if (
-  typoResult &&
-  typoResult.match &&
-  userWords.length === 1 &&
-  typoResult.distance <= 1
-) {
-
-  let finalReply = naturalResponse(typoResult.match.jawaban);
-
-  if (typoResult.match.link) {
-    finalReply += `\n\nDokumen terkait:\n${typoResult.match.link}`;
-  }
-
-  return res.json({
-    reply: finalReply
-  });
-}
-
-    /* ================= GEMINI FALLBACK ================= */
+    /* ================= 3. GEMINI FALLBACK ================= */
     const body = {
       systemInstruction: {
         parts: [{
@@ -559,17 +549,16 @@ if (
     return res.json({ reply });
 
   } catch (error) {
-  console.error("===== CHAT ERROR =====");
-  console.error(error);
-  console.error(error.message);
-  console.error(error.code);
-  console.error(error.stack);
+    console.error("===== CHAT ERROR =====");
+    console.error(error);
+    console.error(error.message);
+    console.error(error.code);
+    console.error(error.stack);
 
-  return res.status(500).json({
-    reply: "Terjadi kesalahan pada server"
-  });
-}
-
+    return res.status(500).json({
+      reply: "Terjadi kesalahan pada server"
+    });
+  }
 });   // <-- INI YANG HILANG
 
 /* =====================================================
