@@ -8,6 +8,7 @@ import levenshtein from "fast-levenshtein";
 
 dotenv.config();
 
+// === INISIALISASI APP HARUS DI ATAS SEBELUM DIGUNAKAN ===
 const app = express();
 
 const db = getDB();
@@ -15,7 +16,23 @@ console.log(db);
 
 testConnection().catch(console.error);
 
-console.log("Express berhasil jalan");
+// Fungsi pembuat tabel otomatis
+async function ensureTableExists() {
+  try {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS chatbot_memory (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        pertanyaan TEXT NOT NULL,
+        jawaban TEXT NOT NULL,
+        link TEXT DEFAULT NULL
+      );
+    `);
+    console.log("Tabel chatbot_memory berhasil dipastikan ada di database!");
+  } catch (err) {
+    console.error("Gagal membuat tabel:", err.message);
+  }
+}
+ensureTableExists();
 
 /* =====================================================
    MIDDLEWARE & CONFIGURATION
