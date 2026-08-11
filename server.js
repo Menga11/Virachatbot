@@ -556,10 +556,18 @@ app.post("/chat", async (req, res) => {
     console.error(error.stack);
 
     return res.status(500).json({
+<<<<<<< HEAD
       reply: "Terjadi kesalahan pada server"
     });
   }
 });   // <-- INI YANG HILANG
+=======
+      reply: "Terjadi kesalahan pada server",
+      errorDetails: error.message // Menampilkan error asli untuk sementara
+    });
+  }
+ });  // <-- INI YANG HILANG
+>>>>>>> 0327480 (Update secure database configuration)
 
 /* =====================================================
    DATABASE SEEDER FROM JSON (SAFE FOR VERCEL PATH)
